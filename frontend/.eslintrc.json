@@ -4,6 +4,16 @@
     "es2021": true,
     "node": true
   },
+  "globals": {
+    "describe": "readonly",
+    "it": "readonly",
+    "expect": "readonly",
+    "beforeEach": "readonly",
+    "afterEach": "readonly",
+    "before": "readonly",
+    "after": "readonly",
+    "vi": "readonly"
+  },
   "extends": [
     "eslint:recommended",
     "plugin:react/recommended",
