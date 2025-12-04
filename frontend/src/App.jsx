@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { t, getLanguage, setLanguage, getAvailableLanguages } from './utils/i18n'
-import { getAllAbsences, getAbsenceTypes, getStatistics } from './services/absenceApi'
+import { getAllAbsences, getAbsenceTypes, getStatistics, createAbsence, updateAbsence, deleteAbsence } from './services/absenceApi'
+import AbsenceForm from './components/AbsenceForm'
+import AbsenceList from './components/AbsenceList'
+import AbsenceFilters from './components/AbsenceFilters'
 import './App.css'
 
 function App() {
@@ -9,24 +12,27 @@ function App() {
   const [statistics, setStatistics] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
   const [currentLanguage, setCurrentLanguage] = useState(getLanguage())
+  const [showForm, setShowForm] = useState(false)
+  const [editingAbsence, setEditingAbsence] = useState(null)
+  const [filters, setFilters] = useState({})
+  const [formLoading, setFormLoading] = useState(false)
 
   // Fetch initial data
   useEffect(() => {
-    const fetchData = async () => {
+    fetchData()
+  }, [])
+
+  // Fetch absences when filters change
+  useEffect(() => {
+    const fetchFiltered = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        const [absencesRes, typesRes, statsRes] = await Promise.all([
-          getAllAbsences(),
-          getAbsenceTypes(),
-          getStatistics(),
-        ])
-
+        const absencesRes = await getAllAbsences(filters)
         setAbsences(absencesRes.data?.data || [])
-        setAbsenceTypes(typesRes.data?.data || [])
-        setStatistics(statsRes.data?.data || null)
       } catch (err) {
         setError(t('message.loadingError'))
         console.error('Error fetching data:', err)
@@ -35,21 +41,43 @@ function App() {
       }
     }
 
-    fetchData()
-  }, [])
+    fetchFiltered()
+  }, [filters])
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const [absencesRes, typesRes, statsRes] = await Promise.all([
+        getAllAbsences(),
+        getAbsenceTypes(),
+        getStatistics(),
+      ])
+
+      setAbsences(absencesRes.data?.data || [])
+      setAbsenceTypes(typesRes.data?.data || [])
+      setStatistics(statsRes.data?.data || null)
+    } catch (err) {
+      setError(t('message.loadingError'))
+      console.error('Error fetching data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang)
     setCurrentLanguage(lang)
   }
 
-  const handleRefresh = async () => {
+  const refreshData = async () => {
     try {
       setLoading(true)
       setError(null)
 
       const [absencesRes, statsRes] = await Promise.all([
-        getAllAbsences(),
+        getAllAbsences(filters),
         getStatistics(),
       ])
 
@@ -61,6 +89,73 @@ function App() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCreateClick = () => {
+    setEditingAbsence(null)
+    setShowForm(true)
+  }
+
+  const handleEditClick = (absence) => {
+    setEditingAbsence(absence)
+    setShowForm(true)
+  }
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      setFormLoading(true)
+      setError(null)
+
+      if (editingAbsence) {
+        // Update mode
+        await updateAbsence(editingAbsence.id, formData)
+        setSuccessMessage(t('message.updatedSuccess'))
+      } else {
+        // Create mode
+        await createAbsence(formData)
+        setSuccessMessage(t('message.createdSuccess'))
+      }
+
+      setShowForm(false)
+      setEditingAbsence(null)
+      await refreshData()
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      setError(err.response?.data?.error || t('message.savingError'))
+      console.error('Error saving absence:', err)
+    } finally {
+      setFormLoading(false)
+    }
+  }
+
+  const handleFormCancel = () => {
+    setShowForm(false)
+    setEditingAbsence(null)
+  }
+
+  const handleDeleteAbsence = async (absenceId) => {
+    try {
+      setError(null)
+      await deleteAbsence(absenceId)
+      setSuccessMessage(t('message.deletedSuccess'))
+      await refreshData()
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      setError(err.response?.data?.error || t('message.deletingError'))
+      console.error('Error deleting absence:', err)
+    }
+  }
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters)
+  }
+
+  const handleClearFilters = () => {
+    setFilters({})
   }
 
   return (
@@ -92,15 +187,23 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}
           </div>
         )}
 
-        {loading ? (
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {successMessage}
+          </div>
+        )}
+
+        {loading && !showForm ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">{t('message.loadingError')}</p>
+            <p className="text-gray-600">{t('status.loading')}</p>
           </div>
         ) : (
           <div className="space-y-8">
@@ -138,78 +241,43 @@ function App() {
               </div>
             )}
 
-            {/* Absences List Section */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 className="text-lg font-medium text-gray-900">{t('list.title')}</h2>
-                <button
-                  onClick={handleRefresh}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {t('form.submit')}
-                </button>
-              </div>
+            {/* Absence Form Modal */}
+            {showForm && (
+              <AbsenceForm
+                absence={editingAbsence}
+                absenceTypes={absenceTypes}
+                onSubmit={handleFormSubmit}
+                onCancel={handleFormCancel}
+                loading={formLoading}
+              />
+            )}
 
-              {absences.length === 0 ? (
-                <div className="p-6 text-center text-gray-500">{t('list.empty')}</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {t('list.serviceAccount')}
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {t('list.employeeName')}
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {t('list.type')}
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {t('list.startDate')}
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {t('list.endDate')}
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {t('list.actions')}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {absences.map((absence) => (
-                        <tr key={absence.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {absence.service_account}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {absence.employee_fullname || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {t(`absence.${absence.absence_type}`)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(absence.start_date).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(absence.end_date).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                            <button className="text-blue-600 hover:text-blue-900 mr-4">
-                              {t('button.edit')}
-                            </button>
-                            <button className="text-red-600 hover:text-red-900">
-                              {t('button.delete')}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            {/* Filters Section */}
+            <AbsenceFilters
+              absenceTypes={absenceTypes}
+              onFilter={handleApplyFilters}
+              onClear={handleClearFilters}
+            />
+
+            {/* Add Absence Button */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-medium text-gray-900">{t('list.title')}</h2>
+              <button
+                onClick={handleCreateClick}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                {t('button.add')}
+              </button>
             </div>
+
+            {/* Absences List Section */}
+            <AbsenceList
+              absences={absences}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteAbsence}
+              loading={loading}
+              error={error}
+            />
           </div>
         )}
       </main>
