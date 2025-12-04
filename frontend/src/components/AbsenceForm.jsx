@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import FormField from '../shared/components/FormField';
 import { validateServiceAccount, validateDateRange } from '../utils/validators';
 import { t } from '../utils/i18n';
@@ -19,6 +19,8 @@ export default function AbsenceForm({
   });
 
   const [errors, setErrors] = useState({});
+  const modalRef = useRef(null);
+  const closeButtonRef = useRef(null);
 
   // Pre-fill form if editing
   useEffect(() => {
@@ -32,6 +34,46 @@ export default function AbsenceForm({
       });
     }
   }, [absence]);
+
+  // Focus trap and Escape key handler for modal
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    // Get all focusable elements
+    const focusableElements = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    // Focus close button on modal open
+    closeButtonRef.current?.focus();
+
+    // Handle Tab key and Escape key
+    const handleKeyDown = (e) => {
+      // Handle Escape key
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancel();
+        return;
+      }
+
+      // Handle Tab key for focus trap
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    modal.addEventListener('keydown', handleKeyDown);
+    return () => modal.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel]);
 
   // Handle field changes
   const handleChange = (e) => {
@@ -154,17 +196,24 @@ export default function AbsenceForm({
   const isEditMode = !!absence;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-96 overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      ref={modalRef}
+    >
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
             {isEditMode ? t('form.editAbsence') : t('form.createAbsence')}
           </h2>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600"
-            aria-label="Close form"
+            className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label={t('button.close')}
           >
             ✕
           </button>
@@ -240,6 +289,7 @@ export default function AbsenceForm({
             <div
               className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm"
               role="alert"
+              aria-live="polite"
             >
               {errors.dateRange}
             </div>
@@ -247,7 +297,11 @@ export default function AbsenceForm({
 
           {/* Loading message */}
           {loading && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm">
+            <div
+              className="p-3 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm"
+              role="status"
+              aria-live="polite"
+            >
               {t('status.loading')}
             </div>
           )}

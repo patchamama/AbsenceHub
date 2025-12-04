@@ -26,9 +26,11 @@ function App() {
   const [filters, setFilters] = useState({});
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch initial data
+  // Fetch initial data and sync HTML lang attribute
   useEffect(() => {
     fetchData();
+    // Sync HTML lang attribute on mount
+    document.documentElement.lang = getLanguage();
   }, []);
 
   // Fetch absences when filters change
@@ -76,6 +78,8 @@ function App() {
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
     setCurrentLanguage(lang);
+    // Update HTML lang attribute
+    document.documentElement.lang = lang;
   };
 
   const refreshData = async () => {
@@ -180,6 +184,8 @@ function App() {
                 value={currentLanguage}
                 onChange={(e) => handleLanguageChange(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                aria-label={t('nav.language')}
+                id="language-selector"
               >
                 {getAvailableLanguages().map((lang) => (
                   <option key={lang} value={lang}>
@@ -196,20 +202,28 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div
+            className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded"
+            role="alert"
+            aria-live="assertive"
+          >
             {error}
           </div>
         )}
 
         {/* Success Message */}
         {successMessage && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          <div
+            className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded"
+            role="status"
+            aria-live="polite"
+          >
             {successMessage}
           </div>
         )}
 
         {loading && !showForm ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12" role="status" aria-live="polite">
             <p className="text-gray-600">{t('status.loading')}</p>
           </div>
         ) : (
