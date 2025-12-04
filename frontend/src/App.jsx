@@ -1,162 +1,169 @@
-import { useState, useEffect } from 'react'
-import { t, getLanguage, setLanguage, getAvailableLanguages } from './utils/i18n'
-import { getAllAbsences, getAbsenceTypes, getStatistics, createAbsence, updateAbsence, deleteAbsence } from './services/absenceApi'
-import AbsenceForm from './components/AbsenceForm'
-import AbsenceList from './components/AbsenceList'
-import AbsenceFilters from './components/AbsenceFilters'
-import './App.css'
+import { useState, useEffect } from 'react';
+import { t, getLanguage, setLanguage, getAvailableLanguages } from './utils/i18n';
+import {
+  getAllAbsences,
+  getAbsenceTypes,
+  getStatistics,
+  createAbsence,
+  updateAbsence,
+  deleteAbsence,
+} from './services/absenceApi';
+import AbsenceForm from './components/AbsenceForm';
+import AbsenceList from './components/AbsenceList';
+import AbsenceFilters from './components/AbsenceFilters';
+import './App.css';
 
 function App() {
-  const [absences, setAbsences] = useState([])
-  const [absenceTypes, setAbsenceTypes] = useState([])
-  const [statistics, setStatistics] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [successMessage, setSuccessMessage] = useState(null)
-  const [currentLanguage, setCurrentLanguage] = useState(getLanguage())
-  const [showForm, setShowForm] = useState(false)
-  const [editingAbsence, setEditingAbsence] = useState(null)
-  const [filters, setFilters] = useState({})
-  const [formLoading, setFormLoading] = useState(false)
+  const [absences, setAbsences] = useState([]);
+  const [absenceTypes, setAbsenceTypes] = useState([]);
+  const [statistics, setStatistics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [currentLanguage, setCurrentLanguage] = useState(getLanguage());
+  const [showForm, setShowForm] = useState(false);
+  const [editingAbsence, setEditingAbsence] = useState(null);
+  const [filters, setFilters] = useState({});
+  const [formLoading, setFormLoading] = useState(false);
 
   // Fetch initial data
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   // Fetch absences when filters change
   useEffect(() => {
     const fetchFiltered = async () => {
       try {
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
 
-        const absencesRes = await getAllAbsences(filters)
-        setAbsences(absencesRes.data?.data || [])
+        const absencesRes = await getAllAbsences(filters);
+        setAbsences(absencesRes.data?.data || []);
       } catch (err) {
-        setError(t('message.loadingError'))
-        console.error('Error fetching data:', err)
+        setError(t('message.loadingError'));
+        console.error('Error fetching data:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchFiltered()
-  }, [filters])
+    fetchFiltered();
+  }, [filters]);
 
   const fetchData = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const [absencesRes, typesRes, statsRes] = await Promise.all([
         getAllAbsences(),
         getAbsenceTypes(),
         getStatistics(),
-      ])
+      ]);
 
-      setAbsences(absencesRes.data?.data || [])
-      setAbsenceTypes(typesRes.data?.data || [])
-      setStatistics(statsRes.data?.data || null)
+      setAbsences(absencesRes.data?.data || []);
+      setAbsenceTypes(typesRes.data?.data || []);
+      setStatistics(statsRes.data?.data || null);
     } catch (err) {
-      setError(t('message.loadingError'))
-      console.error('Error fetching data:', err)
+      setError(t('message.loadingError'));
+      console.error('Error fetching data:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleLanguageChange = (lang) => {
-    setLanguage(lang)
-    setCurrentLanguage(lang)
-  }
+    setLanguage(lang);
+    setCurrentLanguage(lang);
+  };
 
   const refreshData = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       const [absencesRes, statsRes] = await Promise.all([
         getAllAbsences(filters),
         getStatistics(),
-      ])
+      ]);
 
-      setAbsences(absencesRes.data?.data || [])
-      setStatistics(statsRes.data?.data || null)
+      setAbsences(absencesRes.data?.data || []);
+      setStatistics(statsRes.data?.data || null);
     } catch (err) {
-      setError(t('message.loadingError'))
-      console.error('Error refreshing data:', err)
+      setError(t('message.loadingError'));
+      console.error('Error refreshing data:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCreateClick = () => {
-    setEditingAbsence(null)
-    setShowForm(true)
-  }
+    setEditingAbsence(null);
+    setShowForm(true);
+  };
 
   const handleEditClick = (absence) => {
-    setEditingAbsence(absence)
-    setShowForm(true)
-  }
+    setEditingAbsence(absence);
+    setShowForm(true);
+  };
 
   const handleFormSubmit = async (formData) => {
     try {
-      setFormLoading(true)
-      setError(null)
+      setFormLoading(true);
+      setError(null);
 
       if (editingAbsence) {
         // Update mode
-        await updateAbsence(editingAbsence.id, formData)
-        setSuccessMessage(t('message.updatedSuccess'))
+        await updateAbsence(editingAbsence.id, formData);
+        setSuccessMessage(t('message.updatedSuccess'));
       } else {
         // Create mode
-        await createAbsence(formData)
-        setSuccessMessage(t('message.createdSuccess'))
+        await createAbsence(formData);
+        setSuccessMessage(t('message.createdSuccess'));
       }
 
-      setShowForm(false)
-      setEditingAbsence(null)
-      await refreshData()
+      setShowForm(false);
+      setEditingAbsence(null);
+      await refreshData();
 
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || t('message.savingError'))
-      console.error('Error saving absence:', err)
+      setError(err.response?.data?.error || t('message.savingError'));
+      console.error('Error saving absence:', err);
     } finally {
-      setFormLoading(false)
+      setFormLoading(false);
     }
-  }
+  };
 
   const handleFormCancel = () => {
-    setShowForm(false)
-    setEditingAbsence(null)
-  }
+    setShowForm(false);
+    setEditingAbsence(null);
+  };
 
   const handleDeleteAbsence = async (absenceId) => {
     try {
-      setError(null)
-      await deleteAbsence(absenceId)
-      setSuccessMessage(t('message.deletedSuccess'))
-      await refreshData()
+      setError(null);
+      await deleteAbsence(absenceId);
+      setSuccessMessage(t('message.deletedSuccess'));
+      await refreshData();
 
       // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || t('message.deletingError'))
-      console.error('Error deleting absence:', err)
+      setError(err.response?.data?.error || t('message.deletingError'));
+      console.error('Error deleting absence:', err);
     }
-  }
+  };
 
   const handleApplyFilters = (newFilters) => {
-    setFilters(newFilters)
-  }
+    setFilters(newFilters);
+  };
 
   const handleClearFilters = () => {
-    setFilters({})
-  }
+    setFilters({});
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -233,7 +240,8 @@ function App() {
                   <ul className="mt-2 space-y-1">
                     {Object.entries(statistics.by_type || {}).map(([type, count]) => (
                       <li key={type} className="text-sm text-gray-600">
-                        {t(`absence.${type}`)}: <span className="font-bold">{count}</span>
+                        {t(`absence.${type}`)}:{' '}
+                        <span className="font-bold">{count}</span>
                       </li>
                     ))}
                   </ul>
@@ -282,7 +290,7 @@ function App() {
         )}
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

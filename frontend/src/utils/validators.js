@@ -2,7 +2,7 @@
  * Frontend validation utilities for absence forms
  */
 
-export const ALLOWED_ABSENCE_TYPES = ['Urlaub', 'Krankheit', 'Home Office', 'Sonstige']
+export const ALLOWED_ABSENCE_TYPES = ['Urlaub', 'Krankheit', 'Home Office', 'Sonstige'];
 
 /**
  * Validate service account format
@@ -11,20 +11,20 @@ export const ALLOWED_ABSENCE_TYPES = ['Urlaub', 'Krankheit', 'Home Office', 'Son
  */
 export const validateServiceAccount = (serviceAccount) => {
   if (!serviceAccount) {
-    return 'Service account is required'
+    return 'Service account is required';
   }
 
   if (!serviceAccount.startsWith('s.')) {
-    return "Service account must start with 's.'"
+    return "Service account must start with 's.'";
   }
 
-  const parts = serviceAccount.split('.')
+  const parts = serviceAccount.split('.');
   if (parts.length < 3) {
-    return 'Service account must follow format: s.firstname.lastname'
+    return 'Service account must follow format: s.firstname.lastname';
   }
 
-  return null
-}
+  return null;
+};
 
 /**
  * Validate date range
@@ -34,30 +34,30 @@ export const validateServiceAccount = (serviceAccount) => {
  */
 export const validateDateRange = (startDate, endDate) => {
   if (!startDate) {
-    return 'Start date is required'
+    return 'Start date is required';
   }
 
   if (!endDate) {
-    return 'End date is required'
+    return 'End date is required';
   }
 
-  const start = new Date(startDate)
-  const end = new Date(endDate)
+  const start = new Date(startDate);
+  const end = new Date(endDate);
 
   if (isNaN(start.getTime())) {
-    return 'Invalid start date format'
+    return 'Invalid start date format';
   }
 
   if (isNaN(end.getTime())) {
-    return 'Invalid end date format'
+    return 'Invalid end date format';
   }
 
   if (end < start) {
-    return 'End date cannot be before start date'
+    return 'End date cannot be before start date';
   }
 
-  return null
-}
+  return null;
+};
 
 /**
  * Validate absence type
@@ -66,15 +66,15 @@ export const validateDateRange = (startDate, endDate) => {
  */
 export const validateAbsenceType = (absenceType) => {
   if (!absenceType) {
-    return 'Absence type is required'
+    return 'Absence type is required';
   }
 
   if (!ALLOWED_ABSENCE_TYPES.includes(absenceType)) {
-    return `Invalid absence type. Allowed types: ${ALLOWED_ABSENCE_TYPES.join(', ')}`
+    return `Invalid absence type. Allowed types: ${ALLOWED_ABSENCE_TYPES.join(', ')}`;
   }
 
-  return null
-}
+  return null;
+};
 
 /**
  * Validate employee fullname (optional)
@@ -83,11 +83,11 @@ export const validateAbsenceType = (absenceType) => {
  */
 export const validateEmployeeFullname = (fullname) => {
   if (fullname && fullname.length > 200) {
-    return 'Employee fullname must be less than 200 characters'
+    return 'Employee fullname must be less than 200 characters';
   }
 
-  return null
-}
+  return null;
+};
 
 /**
  * Validate entire absence form
@@ -95,30 +95,30 @@ export const validateEmployeeFullname = (fullname) => {
  * @returns {Object} Errors object with field keys
  */
 export const validateAbsenceForm = (formData) => {
-  const errors = {}
+  const errors = {};
 
-  const serviceAccountError = validateServiceAccount(formData.service_account)
+  const serviceAccountError = validateServiceAccount(formData.service_account);
   if (serviceAccountError) {
-    errors.service_account = serviceAccountError
+    errors.service_account = serviceAccountError;
   }
 
-  const dateRangeError = validateDateRange(formData.start_date, formData.end_date)
+  const dateRangeError = validateDateRange(formData.start_date, formData.end_date);
   if (dateRangeError) {
-    errors.dates = dateRangeError
+    errors.dates = dateRangeError;
   }
 
-  const absenceTypeError = validateAbsenceType(formData.absence_type)
+  const absenceTypeError = validateAbsenceType(formData.absence_type);
   if (absenceTypeError) {
-    errors.absence_type = absenceTypeError
+    errors.absence_type = absenceTypeError;
   }
 
-  const fullnameError = validateEmployeeFullname(formData.employee_fullname)
+  const fullnameError = validateEmployeeFullname(formData.employee_fullname);
   if (fullnameError) {
-    errors.employee_fullname = fullnameError
+    errors.employee_fullname = fullnameError;
   }
 
-  return errors
-}
+  return errors;
+};
 
 /**
  * Check if form has errors
@@ -126,5 +126,5 @@ export const validateAbsenceForm = (formData) => {
  * @returns {boolean} True if there are errors
  */
 export const hasErrors = (errors) => {
-  return Object.keys(errors).length > 0
-}
+  return Object.keys(errors).length > 0;
+};

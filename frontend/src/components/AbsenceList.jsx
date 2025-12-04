@@ -1,44 +1,44 @@
-import { useState } from 'react'
-import { t } from '../utils/i18n'
+import { useState } from 'react';
+import { t } from '../utils/i18n';
 
 export default function AbsenceList({
   absences = [],
   onEdit,
   onDelete,
   loading = false,
-  error = null
+  error = null,
 }) {
-  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Calculate duration in days between two dates (inclusive)
   const calculateDuration = (startDate, endDate) => {
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const diffTime = Math.abs(end - start)
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-    return diffDays
-  }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
 
   // Format date for display
   const formatDate = (dateString) => {
-    return dateString
-  }
+    return dateString;
+  };
 
   // Handle delete button click
   const handleDeleteClick = (absence) => {
-    setDeleteConfirm(absence.id)
-  }
+    setDeleteConfirm(absence.id);
+  };
 
   // Confirm delete
   const handleConfirmDelete = (absenceId) => {
-    setDeleteConfirm(null)
-    onDelete(absenceId)
-  }
+    setDeleteConfirm(null);
+    onDelete(absenceId);
+  };
 
   // Cancel delete
   const handleCancelDelete = () => {
-    setDeleteConfirm(null)
-  }
+    setDeleteConfirm(null);
+  };
 
   // Show loading state
   if (loading) {
@@ -46,7 +46,7 @@ export default function AbsenceList({
       <div className="text-center py-8">
         <p className="text-gray-600">{t('status.loading')}</p>
       </div>
-    )
+    );
   }
 
   // Show error state
@@ -55,7 +55,7 @@ export default function AbsenceList({
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
         {error}
       </div>
-    )
+    );
   }
 
   // Show empty state
@@ -64,7 +64,7 @@ export default function AbsenceList({
       <div className="text-center py-8 bg-gray-50 rounded-lg">
         <p className="text-gray-600 text-lg">{t('list.empty')}</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -97,8 +97,8 @@ export default function AbsenceList({
         </thead>
         <tbody>
           {absences.map((absence, index) => {
-            const duration = calculateDuration(absence.start_date, absence.end_date)
-            const displayName = absence.employee_fullname || absence.service_account
+            const duration = calculateDuration(absence.start_date, absence.end_date);
+            const displayName = absence.employee_fullname || absence.service_account;
 
             return (
               <tr
@@ -108,9 +108,7 @@ export default function AbsenceList({
                 <td className="px-6 py-4 text-sm text-gray-900">
                   {absence.service_account}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {displayName}
-                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">{displayName}</td>
                 <td className="px-6 py-4 text-sm text-gray-900">
                   {absence.absence_type}
                 </td>
@@ -138,7 +136,7 @@ export default function AbsenceList({
                   </button>
                 </td>
               </tr>
-            )
+            );
           })}
         </tbody>
       </table>
@@ -153,7 +151,7 @@ export default function AbsenceList({
               </h3>
               <p className="text-gray-600 text-sm mb-6">
                 {`${t('list.serviceAccount')}: ${
-                  absences.find(a => a.id === deleteConfirm)?.service_account
+                  absences.find((a) => a.id === deleteConfirm)?.service_account
                 }`}
               </p>
 
@@ -178,5 +176,5 @@ export default function AbsenceList({
         </div>
       )}
     </div>
-  )
+  );
 }

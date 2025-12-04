@@ -1,24 +1,24 @@
-import { useState, useEffect } from 'react'
-import FormField from '../shared/components/FormField'
-import { validateServiceAccount, validateDateRange } from '../utils/validators'
-import { t } from '../utils/i18n'
+import { useState, useEffect } from 'react';
+import FormField from '../shared/components/FormField';
+import { validateServiceAccount, validateDateRange } from '../utils/validators';
+import { t } from '../utils/i18n';
 
 export default function AbsenceForm({
   absence = null,
   absenceTypes = [],
   onSubmit,
   onCancel,
-  loading = false
+  loading = false,
 }) {
   const [formData, setFormData] = useState({
     service_account: '',
     employee_fullname: '',
     absence_type: '',
     start_date: '',
-    end_date: ''
-  })
+    end_date: '',
+  });
 
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState({});
 
   // Pre-fill form if editing
   useEffect(() => {
@@ -28,58 +28,58 @@ export default function AbsenceForm({
         employee_fullname: absence.employee_fullname || '',
         absence_type: absence.absence_type,
         start_date: absence.start_date,
-        end_date: absence.end_date
-      })
+        end_date: absence.end_date,
+      });
     }
-  }, [absence])
+  }, [absence]);
 
   // Handle field changes
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     // Clear error for this field when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }))
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
-  }
+  };
 
   // Validate individual field
   const validateField = (name, value) => {
     switch (name) {
       case 'service_account':
-        return validateServiceAccount(value)
+        return validateServiceAccount(value);
 
       case 'start_date':
       case 'end_date':
         if (!value) {
-          return t('error.required')
+          return t('error.required');
         }
         // Validate date range if both dates are present
         if (formData.start_date && formData.end_date) {
-          return validateDateRange(formData.start_date, formData.end_date)
+          return validateDateRange(formData.start_date, formData.end_date);
         }
-        return null
+        return null;
 
       case 'absence_type':
         if (!value) {
-          return t('error.required')
+          return t('error.required');
         }
-        return null
+        return null;
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   // Handle field blur for validation
   const handleBlur = (e) => {
-    const { name, value } = e.target
-    const error = validateField(name, value)
+    const { name, value } = e.target;
+    const error = validateField(name, value);
     if (error) {
-      setErrors(prev => ({ ...prev, [name]: error }))
+      setErrors((prev) => ({ ...prev, [name]: error }));
     }
-  }
+  };
 
   // Clear form
   const handleClear = () => {
@@ -88,51 +88,51 @@ export default function AbsenceForm({
       employee_fullname: '',
       absence_type: '',
       start_date: '',
-      end_date: ''
-    })
-    setErrors({})
-  }
+      end_date: '',
+    });
+    setErrors({});
+  };
 
   // Handle form submission
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // Validate all fields
-    const newErrors = {}
+    const newErrors = {};
 
     // Validate service account
-    const serviceAccountError = validateServiceAccount(formData.service_account)
+    const serviceAccountError = validateServiceAccount(formData.service_account);
     if (serviceAccountError) {
-      newErrors.service_account = serviceAccountError
+      newErrors.service_account = serviceAccountError;
     }
 
     // Validate absence type
     if (!formData.absence_type) {
-      newErrors.absence_type = t('error.required')
+      newErrors.absence_type = t('error.required');
     }
 
     // Validate start date
     if (!formData.start_date) {
-      newErrors.start_date = t('error.required')
+      newErrors.start_date = t('error.required');
     }
 
     // Validate end date
     if (!formData.end_date) {
-      newErrors.end_date = t('error.required')
+      newErrors.end_date = t('error.required');
     }
 
     // Validate date range
     if (formData.start_date && formData.end_date) {
-      const dateRangeError = validateDateRange(formData.start_date, formData.end_date)
+      const dateRangeError = validateDateRange(formData.start_date, formData.end_date);
       if (dateRangeError) {
-        newErrors.dateRange = dateRangeError
+        newErrors.dateRange = dateRangeError;
       }
     }
 
     // If there are errors, display them
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
+      setErrors(newErrors);
+      return;
     }
 
     // Call onSubmit with form data
@@ -141,17 +141,17 @@ export default function AbsenceForm({
       employee_fullname: formData.employee_fullname || null,
       absence_type: formData.absence_type,
       start_date: formData.start_date,
-      end_date: formData.end_date
-    })
-  }
+      end_date: formData.end_date,
+    });
+  };
 
   // Convert absence types to FormField options
-  const typeOptions = absenceTypes.map(type => ({
+  const typeOptions = absenceTypes.map((type) => ({
     value: typeof type === 'string' ? type : type.value,
-    label: typeof type === 'string' ? type : type.label
-  }))
+    label: typeof type === 'string' ? type : type.label,
+  }));
 
-  const isEditMode = !!absence
+  const isEditMode = !!absence;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -237,7 +237,10 @@ export default function AbsenceForm({
 
           {/* Date Range Error */}
           {errors.dateRange && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm" role="alert">
+            <div
+              className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm"
+              role="alert"
+            >
               {errors.dateRange}
             </div>
           )}
@@ -276,5 +279,5 @@ export default function AbsenceForm({
         </form>
       </div>
     </div>
-  )
+  );
 }

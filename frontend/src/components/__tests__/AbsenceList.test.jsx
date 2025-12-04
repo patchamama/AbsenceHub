@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import AbsenceList from '../AbsenceList'
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import AbsenceList from '../AbsenceList';
 
 describe('AbsenceList Component', () => {
   const mockAbsences = [
@@ -11,7 +11,7 @@ describe('AbsenceList Component', () => {
       absence_type: 'Urlaub',
       start_date: '2025-01-15',
       end_date: '2025-01-20',
-      created_at: '2024-12-01T10:00:00'
+      created_at: '2024-12-01T10:00:00',
     },
     {
       id: 2,
@@ -20,16 +20,16 @@ describe('AbsenceList Component', () => {
       absence_type: 'Krankheit',
       start_date: '2025-01-10',
       end_date: '2025-01-12',
-      created_at: '2024-12-02T10:00:00'
-    }
-  ]
+      created_at: '2024-12-02T10:00:00',
+    },
+  ];
 
-  const mockOnEdit = vi.fn()
-  const mockOnDelete = vi.fn()
+  const mockOnEdit = vi.fn();
+  const mockOnDelete = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   describe('Rendering', () => {
     it('renders table with all columns', () => {
@@ -40,17 +40,17 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText(/service account/i)).toBeInTheDocument()
-      expect(screen.getByText(/employee name/i)).toBeInTheDocument()
-      expect(screen.getByText(/type/i)).toBeInTheDocument()
-      expect(screen.getByText(/start date/i)).toBeInTheDocument()
-      expect(screen.getByText(/end date/i)).toBeInTheDocument()
-      expect(screen.getByText(/duration/i)).toBeInTheDocument()
-      expect(screen.getByText(/actions/i)).toBeInTheDocument()
-    })
+      expect(screen.getByText(/service account/i)).toBeInTheDocument();
+      expect(screen.getByText(/employee name/i)).toBeInTheDocument();
+      expect(screen.getByText(/type/i)).toBeInTheDocument();
+      expect(screen.getByText(/start date/i)).toBeInTheDocument();
+      expect(screen.getByText(/end date/i)).toBeInTheDocument();
+      expect(screen.getByText(/duration/i)).toBeInTheDocument();
+      expect(screen.getByText(/actions/i)).toBeInTheDocument();
+    });
 
     it('renders all absence rows', () => {
       render(
@@ -60,15 +60,15 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText('s.john.doe')).toBeInTheDocument()
-      expect(screen.getByText('John Doe')).toBeInTheDocument()
-      expect(screen.getByText('s.jane.smith')).toBeInTheDocument()
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText('s.john.doe')).toBeInTheDocument();
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getByText('s.jane.smith')).toBeInTheDocument();
+      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    });
+  });
 
   describe('Absence Data Display', () => {
     it('displays absence type correctly', () => {
@@ -79,12 +79,12 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText('Urlaub')).toBeInTheDocument()
-      expect(screen.getByText('Krankheit')).toBeInTheDocument()
-    })
+      expect(screen.getByText('Urlaub')).toBeInTheDocument();
+      expect(screen.getByText('Krankheit')).toBeInTheDocument();
+    });
 
     it('displays absence dates correctly', () => {
       render(
@@ -94,12 +94,12 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText('2025-01-15')).toBeInTheDocument()
-      expect(screen.getByText('2025-01-20')).toBeInTheDocument()
-    })
+      expect(screen.getByText('2025-01-15')).toBeInTheDocument();
+      expect(screen.getByText('2025-01-20')).toBeInTheDocument();
+    });
 
     it('calculates and displays duration correctly', () => {
       render(
@@ -109,12 +109,12 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
       // 2025-01-15 to 2025-01-20 = 6 days (inclusive)
-      expect(screen.getByText(/6\s+days/i)).toBeInTheDocument()
-    })
+      expect(screen.getByText(/6\s+days/i)).toBeInTheDocument();
+    });
 
     it('displays employee name when available', () => {
       render(
@@ -124,12 +124,12 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText('John Doe')).toBeInTheDocument()
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument()
-    })
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    });
 
     it('displays service account when employee name not available', () => {
       const absencesWithoutNames = [
@@ -140,9 +140,9 @@ describe('AbsenceList Component', () => {
           absence_type: 'Home Office',
           start_date: '2025-02-01',
           end_date: '2025-02-01',
-          created_at: '2024-12-03T10:00:00'
-        }
-      ]
+          created_at: '2024-12-03T10:00:00',
+        },
+      ];
 
       const { container } = render(
         <AbsenceList
@@ -151,14 +151,16 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      const cells = container.querySelectorAll('td')
-      const serviceAccountCells = Array.from(cells).filter(cell => cell.textContent === 's.bob.wilson')
-      expect(serviceAccountCells.length).toBeGreaterThan(0)
-    })
-  })
+      const cells = container.querySelectorAll('td');
+      const serviceAccountCells = Array.from(cells).filter(
+        (cell) => cell.textContent === 's.bob.wilson',
+      );
+      expect(serviceAccountCells.length).toBeGreaterThan(0);
+    });
+  });
 
   describe('Actions', () => {
     it('calls onEdit when edit button is clicked', () => {
@@ -169,14 +171,14 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      const editButtons = screen.getAllByText(/edit/i)
-      fireEvent.click(editButtons[0])
+      const editButtons = screen.getAllByText(/edit/i);
+      fireEvent.click(editButtons[0]);
 
-      expect(mockOnEdit).toHaveBeenCalledWith(mockAbsences[0])
-    })
+      expect(mockOnEdit).toHaveBeenCalledWith(mockAbsences[0]);
+    });
 
     it('shows delete confirmation before deleting', async () => {
       render(
@@ -186,16 +188,16 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      const deleteButtons = screen.getAllByText(/delete/i)
-      fireEvent.click(deleteButtons[0])
+      const deleteButtons = screen.getAllByText(/delete/i);
+      fireEvent.click(deleteButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText(/are you sure/i)).toBeInTheDocument()
-      })
-    })
+        expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
+      });
+    });
 
     it('calls onDelete when confirmed in delete dialog', async () => {
       render(
@@ -205,21 +207,21 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      const deleteButtons = screen.getAllByText(/delete/i)
-      fireEvent.click(deleteButtons[0])
+      const deleteButtons = screen.getAllByText(/delete/i);
+      fireEvent.click(deleteButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText(/are you sure/i)).toBeInTheDocument()
-      })
+        expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
+      });
 
-      const confirmButton = screen.getByRole('button', { name: /confirm/i })
-      fireEvent.click(confirmButton)
+      const confirmButton = screen.getByRole('button', { name: /confirm/i });
+      fireEvent.click(confirmButton);
 
-      expect(mockOnDelete).toHaveBeenCalledWith(mockAbsences[0].id)
-    })
+      expect(mockOnDelete).toHaveBeenCalledWith(mockAbsences[0].id);
+    });
 
     it('does not call onDelete when cancelled in delete dialog', async () => {
       render(
@@ -229,22 +231,22 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      const deleteButtons = screen.getAllByText(/delete/i)
-      fireEvent.click(deleteButtons[0])
+      const deleteButtons = screen.getAllByText(/delete/i);
+      fireEvent.click(deleteButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText(/are you sure/i)).toBeInTheDocument()
-      })
+        expect(screen.getByText(/are you sure/i)).toBeInTheDocument();
+      });
 
-      const cancelButton = screen.getAllByText(/cancel/i)[0]
-      fireEvent.click(cancelButton)
+      const cancelButton = screen.getAllByText(/cancel/i)[0];
+      fireEvent.click(cancelButton);
 
-      expect(mockOnDelete).not.toHaveBeenCalled()
-    })
-  })
+      expect(mockOnDelete).not.toHaveBeenCalled();
+    });
+  });
 
   describe('Empty State', () => {
     it('shows empty state message when no absences', () => {
@@ -255,11 +257,11 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText(/no absences found/i)).toBeInTheDocument()
-    })
+      expect(screen.getByText(/no absences found/i)).toBeInTheDocument();
+    });
 
     it('does not show table when no absences', () => {
       const { container } = render(
@@ -269,12 +271,12 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(container.querySelector('table')).not.toBeInTheDocument()
-    })
-  })
+      expect(container.querySelector('table')).not.toBeInTheDocument();
+    });
+  });
 
   describe('Loading State', () => {
     it('shows loading message when loading is true', () => {
@@ -285,12 +287,12 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={true}
           error={null}
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText(/loading/i)).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    });
+  });
 
   describe('Error State', () => {
     it('shows error message when error prop is provided', () => {
@@ -301,12 +303,12 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error="Failed to load absences"
-        />
-      )
+        />,
+      );
 
-      expect(screen.getByText(/failed to load absences/i)).toBeInTheDocument()
-    })
-  })
+      expect(screen.getByText(/failed to load absences/i)).toBeInTheDocument();
+    });
+  });
 
   describe('Accessibility', () => {
     it('has accessible table structure', () => {
@@ -317,17 +319,17 @@ describe('AbsenceList Component', () => {
           onDelete={mockOnDelete}
           loading={false}
           error={null}
-        />
-      )
+        />,
+      );
 
-      const table = container.querySelector('table')
-      expect(table).toBeInTheDocument()
+      const table = container.querySelector('table');
+      expect(table).toBeInTheDocument();
 
-      const thead = table.querySelector('thead')
-      expect(thead).toBeInTheDocument()
+      const thead = table.querySelector('thead');
+      expect(thead).toBeInTheDocument();
 
-      const tbody = table.querySelector('tbody')
-      expect(tbody).toBeInTheDocument()
-    })
-  })
-})
+      const tbody = table.querySelector('tbody');
+      expect(tbody).toBeInTheDocument();
+    });
+  });
+});

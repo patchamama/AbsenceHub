@@ -81,14 +81,16 @@ const translations = {
     // Validation Errors
     'error.serviceAccountRequired': 'Service account is required',
     'error.serviceAccountFormat': "Service account must start with 's.'",
-    'error.serviceAccountStructure': 'Service account must follow format: s.firstname.lastname',
+    'error.serviceAccountStructure':
+      'Service account must follow format: s.firstname.lastname',
     'error.absenceTypeRequired': 'Absence type is required',
     'error.absenceTypeInvalid': 'Invalid absence type',
     'error.startDateRequired': 'Start date is required',
     'error.endDateRequired': 'End date is required',
     'error.dateRangeInvalid': 'End date cannot be before start date',
     'error.dateFormatInvalid': 'Invalid date format',
-    'error.overlapError': 'This absence overlaps with an existing absence of the same type',
+    'error.overlapError':
+      'This absence overlaps with an existing absence of the same type',
 
     // Statistics
     'stats.title': 'Statistics',
@@ -166,22 +168,28 @@ const translations = {
     'message.createdSuccess': 'Abwesenheit erfolgreich erstellt',
     'message.updatedSuccess': 'Abwesenheit erfolgreich aktualisiert',
     'message.deletedSuccess': 'Abwesenheit erfolgreich gelöscht',
-    'message.deleteConfirm': 'Sind Sie sicher, dass Sie diese Abwesenheit löschen möchten?',
-    'message.loadingError': 'Fehler beim Laden der Abwesenheiten. Bitte versuchen Sie es erneut.',
-    'message.savingError': 'Fehler beim Speichern der Abwesenheit. Bitte versuchen Sie es erneut.',
-    'message.deletingError': 'Fehler beim Löschen der Abwesenheit. Bitte versuchen Sie es erneut.',
+    'message.deleteConfirm':
+      'Sind Sie sicher, dass Sie diese Abwesenheit löschen möchten?',
+    'message.loadingError':
+      'Fehler beim Laden der Abwesenheiten. Bitte versuchen Sie es erneut.',
+    'message.savingError':
+      'Fehler beim Speichern der Abwesenheit. Bitte versuchen Sie es erneut.',
+    'message.deletingError':
+      'Fehler beim Löschen der Abwesenheit. Bitte versuchen Sie es erneut.',
 
     // Validation Errors
     'error.serviceAccountRequired': 'Service-Konto erforderlich',
     'error.serviceAccountFormat': "Service-Konto muss mit 's.' beginnen",
-    'error.serviceAccountStructure': 'Service-Konto muss dem Format entsprechen: s.vorname.nachname',
+    'error.serviceAccountStructure':
+      'Service-Konto muss dem Format entsprechen: s.vorname.nachname',
     'error.absenceTypeRequired': 'Abwesenheitstyp erforderlich',
     'error.absenceTypeInvalid': 'Ungültiger Abwesenheitstyp',
     'error.startDateRequired': 'Startdatum erforderlich',
     'error.endDateRequired': 'Enddatum erforderlich',
     'error.dateRangeInvalid': 'Enddatum kann nicht vor dem Startdatum liegen',
     'error.dateFormatInvalid': 'Ungültiges Datumsformat',
-    'error.overlapError': 'Diese Abwesenheit überlappt sich mit einer bestehenden Abwesenheit desselben Typs',
+    'error.overlapError':
+      'Diese Abwesenheit überlappt sich mit einer bestehenden Abwesenheit desselben Typs',
 
     // Statistics
     'stats.title': 'Statistiken',
@@ -189,30 +197,30 @@ const translations = {
     'stats.uniqueEmployees': 'Eindeutige Mitarbeiter',
     'stats.byType': 'Abwesenheiten nach Typ',
   },
-}
+};
 
-let currentLanguage = localStorage.getItem('language') || 'en'
+let currentLanguage = localStorage.getItem('language') || 'en';
 
 export const setLanguage = (lang) => {
   if (translations[lang]) {
-    currentLanguage = lang
-    localStorage.setItem('language', lang)
-    window.dispatchEvent(new Event('languagechange'))
+    currentLanguage = lang;
+    localStorage.setItem('language', lang);
+    window.dispatchEvent(new Event('languagechange'));
   }
-}
+};
 
-export const getLanguage = () => currentLanguage
+export const getLanguage = () => currentLanguage;
 
 export const t = (key, defaultValue = key) => {
-  const translation = translations[currentLanguage]?.[key]
-  return translation || translations.en[key] || defaultValue
-}
+  const translation = translations[currentLanguage]?.[key];
+  return translation || translations.en[key] || defaultValue;
+};
 
-export const getAvailableLanguages = () => Object.keys(translations)
+export const getAvailableLanguages = () => Object.keys(translations);
 
 export default {
   t,
   setLanguage,
   getLanguage,
   getAvailableLanguages,
-}
+};

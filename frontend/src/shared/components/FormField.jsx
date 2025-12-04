@@ -18,16 +18,16 @@ export default function FormField({
   className = '',
   ariaDescribedBy,
 }) {
-  const inputId = `${name}-input`
-  const errorId = `${name}-error`
-  const describedBy = error ? errorId : ariaDescribedBy
+  const inputId = `${name}-input`;
+  const errorId = `${name}-error`;
+  const describedBy = error ? errorId : ariaDescribedBy;
 
   const commonInputClasses =
-    'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed'
+    'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed';
 
   const errorClasses = error
     ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-    : ''
+    : '';
 
   return (
     <div className={`form-group mb-4 ${className}`}>
@@ -54,9 +54,7 @@ export default function FormField({
           aria-describedby={describedBy}
           className={`${commonInputClasses} ${errorClasses}`}
         >
-          <option value="">
-            -- {placeholder || `Select ${label || 'option'}`} --
-          </option>
+          <option value="">-- {placeholder || `Select ${label || 'option'}`} --</option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -86,5 +84,5 @@ export default function FormField({
         </p>
       )}
     </div>
-  )
+  );
 }
