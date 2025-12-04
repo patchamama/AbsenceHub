@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: absencehub_db
+    environment:
+      POSTGRES_USER: absencehub
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: absencehub_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U absencehub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - absencehub_network
+
+  # Backend Flask Application (optional - can also run locally)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: absencehub_backend
+    environment:
+      FLASK_APP: run.py
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://absencehub:password@postgres:5432/absencehub_dev
+      SECRET_KEY: dev-secret-key-change-in-production
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - absencehub_network
+    command: flask run --host=0.0.0.0
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  absencehub_network:
+    driver: bridge
