@@ -398,7 +398,7 @@ class Installer:
         Logger.success(f"Configuration saved to {self.config_file}")
 
     def setup_backend(self):
-        """Setup backend dependencies"""
+        """Setup backend dependencies with fallback strategies for Python 3.13 compatibility"""
         Logger.section("Setting up Backend")
 
         backend_dir = self.project_dir / 'backend'
@@ -411,19 +411,188 @@ class Installer:
         requirements_file = backend_dir / 'requirements.txt'
 
         if requirements_file.exists():
-            result = subprocess.run(
-                [sys.executable, '-m', 'pip', 'install', '-r', str(requirements_file)],
-                cwd=str(backend_dir),
-                capture_output=True,
-                text=True
+            # Strategy 1: Standard pip install
+            Logger.info("Attempting standard installation...")
+            result = self._try_pip_install(backend_dir, requirements_file)
+
+            if result['success']:
+                Logger.success("Backend dependencies installed")
+                return
+
+            # Strategy 2: Try with --only-binary flag for pre-built wheels
+            Logger.warning("Standard installation failed, trying pre-built wheels only...")
+            result = self._try_pip_install(
+                backend_dir,
+                requirements_file,
+                extra_args=['--only-binary', ':all:']
             )
 
-            if result.returncode == 0:
-                Logger.success("Backend dependencies installed")
-            else:
-                Logger.error(f"Failed to install backend dependencies: {result.stderr}")
+            if result['success']:
+                Logger.success("Backend dependencies installed with pre-built wheels")
+                return
+
+            # Strategy 3: Try allowing compilation with environment variables
+            Logger.warning("Pre-built wheels failed, attempting compilation...")
+            result = self._try_pip_install(
+                backend_dir,
+                requirements_file,
+                allow_compilation=True
+            )
+
+            if result['success']:
+                Logger.success("Backend dependencies installed with compilation")
+                return
+
+            # Strategy 4: macOS-specific handling for M1/M2
+            if SystemInfo.detect_os() == 'macOS' and SystemInfo.detect_architecture() == 'arm64':
+                Logger.warning("macOS ARM64 detected. Attempting architecture-specific installation...")
+                result = self._try_macos_arm64_install(backend_dir, requirements_file)
+
+                if result['success']:
+                    Logger.success("Backend dependencies installed with macOS-specific configuration")
+                    return
+
+            # Strategy 5: Final attempt - install without psycopg2, guide user
+            Logger.warning("All standard installation methods failed.")
+            self._handle_installation_failure(backend_dir, requirements_file, result)
         else:
             Logger.warning("requirements.txt not found")
+
+    def _try_pip_install(self, backend_dir, requirements_file, extra_args=None, allow_compilation=False):
+        """
+        Attempt pip installation with optional flags.
+
+        Args:
+            backend_dir: Path to backend directory
+            requirements_file: Path to requirements.txt
+            extra_args: Additional pip arguments
+            allow_compilation: If True, allow compilation from source
+
+        Returns:
+            dict: {'success': bool, 'stdout': str, 'stderr': str}
+        """
+        cmd = [sys.executable, '-m', 'pip', 'install']
+
+        if extra_args:
+            cmd.extend(extra_args)
+
+        if not allow_compilation:
+            cmd.extend(['--prefer-binary'])
+
+        cmd.extend(['-r', str(requirements_file)])
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=str(backend_dir),
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+
+            return {
+                'success': result.returncode == 0,
+                'stdout': result.stdout,
+                'stderr': result.stderr
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                'success': False,
+                'stdout': '',
+                'stderr': 'Installation timed out after 5 minutes'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'stdout': '',
+                'stderr': str(e)
+            }
+
+    def _try_macos_arm64_install(self, backend_dir, requirements_file):
+        """
+        macOS ARM64 (M1/M2) specific installation strategy.
+
+        Args:
+            backend_dir: Path to backend directory
+            requirements_file: Path to requirements.txt
+
+        Returns:
+            dict: {'success': bool, 'stdout': str, 'stderr': str}
+        """
+        # Set environment variables for ARM64 compilation
+        env = os.environ.copy()
+        env['ARCHFLAGS'] = '-arch arm64'
+        env['LDFLAGS'] = '-L/opt/homebrew/lib'
+        env['CPPFLAGS'] = '-I/opt/homebrew/include'
+
+        cmd = [
+            sys.executable, '-m', 'pip', 'install',
+            '--no-cache-dir',
+            '-r', str(requirements_file)
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=str(backend_dir),
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=300
+            )
+
+            return {
+                'success': result.returncode == 0,
+                'stdout': result.stdout,
+                'stderr': result.stderr
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'stdout': '',
+                'stderr': str(e)
+            }
+
+    def _handle_installation_failure(self, backend_dir, requirements_file, last_result):
+        """
+        Handle installation failure with user guidance.
+
+        Args:
+            backend_dir: Path to backend directory
+            requirements_file: Path to requirements.txt
+            last_result: Result from last installation attempt
+        """
+        Logger.error("Failed to install backend dependencies")
+        Logger.info("\nError Details:")
+        Logger.info(last_result['stderr'][:500])  # Show first 500 chars of error
+
+        os_name = SystemInfo.detect_os()
+
+        if os_name == 'macOS':
+            Logger.warning("\nFor macOS, you may need to install Xcode Command Line Tools:")
+            Logger.info("  1. Run: xcode-select --install")
+            Logger.info("  2. Then retry installation: python3 install.py")
+            Logger.info("  3. Or use external PostgreSQL (skip Docker option)")
+            Logger.info("\nAlternative: Install Python 3.11 or 3.12 (more compatible)")
+        elif os_name == 'Windows':
+            Logger.warning("\nFor Windows, you may need Visual C++ Build Tools:")
+            Logger.info("  1. Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/")
+            Logger.info("  2. Install 'Desktop development with C++'")
+            Logger.info("  3. Then retry installation: python install.py")
+        else:  # Linux
+            Logger.warning("\nFor Linux, you may need to install build tools:")
+            Logger.info("  Ubuntu/Debian: sudo apt-get install python3-dev")
+            Logger.info("  CentOS/RHEL: sudo yum install python3-devel")
+            Logger.info("  Then retry installation: python3 install.py")
+
+        Logger.warning("\nYou can continue with:")
+        Logger.info("  - External PostgreSQL database (skip Docker)")
+        Logger.info("  - Manual backend setup after resolving dependencies")
+
+        user_input = input("\nContinue anyway? (y/n): ").strip().lower()
+        if user_input != 'y':
+            Logger.error("Installation cancelled")
+            sys.exit(1)
 
     def setup_frontend(self):
         """Setup frontend dependencies"""
