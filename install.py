@@ -699,28 +699,28 @@ class Installer:
 
     def _handle_docker_daemon_error(self):
         """Handle Docker daemon not running error"""
-        os_name = SystemInfo.detect_os()
+        os_name = SystemInfo.get_os()
 
         Logger.warning("\nDocker daemon is not running. Options:")
         Logger.info("  1. Start Docker Desktop and retry installation")
         Logger.info("  2. Use external PostgreSQL database instead")
         Logger.info("  3. Cancel installation")
 
-        if os_name == 'macOS':
+        if os_name == 'macos':
             Logger.warning("\nOn macOS, start Docker with:")
             Logger.info("  1. Open Docker.app from Applications folder")
             Logger.info("  2. Or use: open -a Docker")
             Logger.info("  3. Wait for Docker daemon to start (~30 seconds)")
             Logger.info("  4. Then retry: python3 install.py")
 
-        elif os_name == 'Windows':
+        elif os_name == 'windows':
             Logger.warning("\nOn Windows, start Docker with:")
             Logger.info("  1. Start Docker Desktop from Start Menu")
             Logger.info("  2. Or use: & 'C:\\Program Files\\Docker\\Docker\\Docker.exe'")
             Logger.info("  3. Wait for Docker daemon to start (~1 minute)")
             Logger.info("  4. Then retry: python install.py")
 
-        else:  # Linux
+        else:  # linux
             Logger.warning("\nOn Linux, start Docker with:")
             Logger.info("  sudo systemctl start docker")
             Logger.info("  Then retry: python3 install.py")
