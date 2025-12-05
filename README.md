@@ -35,6 +35,8 @@ A comprehensive Employee Absence Management System built with Flask, React, and 
 ## Prerequisites
 
 - Python 3.9+ (for backend)
+  - **Python 3.13 support**: Fully supported with optimized installation strategy (see [PYTHON313_FIX.md](PYTHON313_FIX.md) for details)
+  - **Recommended**: Python 3.11 or 3.12 for fastest installation
 - Node.js 18+ (for frontend)
 - PostgreSQL 13+ (or Docker for containerized setup)
 - Git
@@ -335,6 +337,30 @@ npm run build        # Build for production
 - Support for 10,000+ records
 
 ## Troubleshooting
+
+### Python 3.13 Installation Issues
+
+If you encounter `psycopg2-binary` build errors during installation:
+
+1. **First, try the installer again** - It uses 5 different strategies:
+   ```bash
+   python3 install.py
+   ```
+
+2. **For macOS M1/M2**, install Xcode Command Line Tools:
+   ```bash
+   xcode-select --install
+   python3 install.py
+   ```
+
+3. **Use external PostgreSQL** - In installer, select "Connect to External PostgreSQL Server"
+
+4. **Switch to Python 3.12** - More compatibility:
+   ```bash
+   python3.12 install.py
+   ```
+
+For detailed information, see [PYTHON313_FIX.md](PYTHON313_FIX.md).
 
 ### Database Connection Issues
 ```bash
