@@ -628,6 +628,13 @@ class Installer:
             Logger.error("Docker is not available. Please install Docker first.")
             sys.exit(1)
 
+        # Check if Docker daemon is running
+        Logger.info("Checking if Docker daemon is running...")
+        if not self._check_docker_daemon():
+            Logger.error("Docker daemon is not running!")
+            self._handle_docker_daemon_error()
+            return
+
         Logger.info("Creating PostgreSQL Docker container...")
 
         # Stop and remove existing container if it exists
@@ -670,7 +677,64 @@ class Installer:
 
             Logger.warning("Database connection verification timed out, proceeding anyway...")
         else:
-            Logger.error(f"Failed to create Docker container: {result.stderr}")
+            # Check if it's a daemon issue or another error
+            if 'daemon' in result.stderr.lower() or 'Cannot connect' in result.stderr:
+                Logger.error("Docker daemon is not running!")
+                self._handle_docker_daemon_error()
+            else:
+                Logger.error(f"Failed to create Docker container: {result.stderr}")
+
+    def _check_docker_daemon(self) -> bool:
+        """Check if Docker daemon is running"""
+        try:
+            result = subprocess.run(
+                ['docker', 'ps'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return result.returncode == 0
+        except Exception:
+            return False
+
+    def _handle_docker_daemon_error(self):
+        """Handle Docker daemon not running error"""
+        os_name = SystemInfo.detect_os()
+
+        Logger.warning("\nDocker daemon is not running. Options:")
+        Logger.info("  1. Start Docker Desktop and retry installation")
+        Logger.info("  2. Use external PostgreSQL database instead")
+        Logger.info("  3. Cancel installation")
+
+        if os_name == 'macOS':
+            Logger.warning("\nOn macOS, start Docker with:")
+            Logger.info("  1. Open Docker.app from Applications folder")
+            Logger.info("  2. Or use: open -a Docker")
+            Logger.info("  3. Wait for Docker daemon to start (~30 seconds)")
+            Logger.info("  4. Then retry: python3 install.py")
+
+        elif os_name == 'Windows':
+            Logger.warning("\nOn Windows, start Docker with:")
+            Logger.info("  1. Start Docker Desktop from Start Menu")
+            Logger.info("  2. Or use: & 'C:\\Program Files\\Docker\\Docker\\Docker.exe'")
+            Logger.info("  3. Wait for Docker daemon to start (~1 minute)")
+            Logger.info("  4. Then retry: python install.py")
+
+        else:  # Linux
+            Logger.warning("\nOn Linux, start Docker with:")
+            Logger.info("  sudo systemctl start docker")
+            Logger.info("  Then retry: python3 install.py")
+
+        Logger.warning("\nAlternatively, use external PostgreSQL:")
+        Logger.info("  1. Have PostgreSQL 13+ running on your system")
+        Logger.info("  2. Run installer again: python3 install.py")
+        Logger.info("  3. Choose: 'Connect to External PostgreSQL Server'")
+        Logger.info("  4. Enter connection details")
+
+        user_input = input("\nContinue anyway? (y/n): ").strip().lower()
+        if user_input != 'y':
+            Logger.error("Installation cancelled due to Docker daemon issue")
+            sys.exit(1)
 
     def setup_database(self):
         """Setup database schema and migrations"""
