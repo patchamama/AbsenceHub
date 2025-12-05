@@ -140,7 +140,8 @@ class AppLauncher:
         print("=" * 60 + "\n")
 
         print("Frontend: http://localhost:5173")
-        print("Backend:  http://localhost:5000\n")
+        print("Backend:  http://localhost:5000 (or next available port)\n")
+        print("Note: If port 5000 is in use, backend will use 5001, 5002, etc.\n")
 
         config = self.load_config()
         if config:
