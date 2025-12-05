@@ -84,3 +84,5 @@ logs/
 
 # Misc
 .claude/settings.local.json
+.backend-port
+.env.installer

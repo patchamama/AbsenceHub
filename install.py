@@ -274,27 +274,105 @@ class DatabaseConfig:
         self.database = Logger.prompt("Database name [absencehub]: ") or "absencehub"
 
     def test_connection(self) -> Tuple[bool, str]:
-        """Test database connection"""
+        """Test database connection with UTF-8 handling for WSL"""
         Logger.section("Testing Database Connection")
 
+        # Set UTF-8 environment variables for this process
+        import locale
+        env_backup = {}
         try:
+            # Backup and set UTF-8 environment
+            for var in ['LC_ALL', 'LANG', 'LANGUAGE']:
+                env_backup[var] = os.environ.get(var)
+                os.environ[var] = 'C.UTF-8'
+
+            # Set Python's default encoding
+            if hasattr(locale, 'getpreferredencoding'):
+                locale.getpreferredencoding = lambda: 'UTF-8'
+
             import psycopg2
+            from psycopg2 import extensions
+
+            # Force UTF-8 encoding for the connection with error handling
             conn = psycopg2.connect(
                 host=self.host,
                 port=self.port,
                 user=self.user,
                 password=self.password,
-                database='postgres'  # Connect to default database first
+                database='postgres',  # Connect to default database first
+                client_encoding='UTF8'
             )
+
+            # Set connection encoding
+            conn.set_client_encoding('UTF8')
+
+            # Test query
+            cursor = conn.cursor()
+            cursor.execute("SELECT version();")
+            cursor.fetchone()
+            cursor.close()
             conn.close()
+
             Logger.success("Database connection successful!")
             return True, "Connection successful"
+
         except ImportError:
             Logger.error("psycopg2 not installed. Installing...")
             subprocess.run([sys.executable, '-m', 'pip', 'install', 'psycopg2-binary'], check=False)
             return self.test_connection()
+
+        except (UnicodeDecodeError, UnicodeEncodeError) as e:
+            # Encoding error - try alternative approach
+            Logger.warning(f"Encoding issue detected: {type(e).__name__}")
+            return self._test_connection_alternative()
+
         except Exception as e:
-            Logger.error(f"Connection failed: {str(e)}")
+            error_msg = str(e)
+            # Check if it's an encoding-related exception message
+            if 'utf-8' in error_msg.lower() or 'codec' in error_msg.lower():
+                Logger.warning("Encoding error in error message itself")
+                return self._test_connection_alternative()
+            Logger.error(f"Connection failed: {error_msg}")
+            return False, error_msg
+
+        finally:
+            # Restore environment variables
+            for var, value in env_backup.items():
+                if value is None:
+                    os.environ.pop(var, None)
+                else:
+                    os.environ[var] = value
+
+    def _test_connection_alternative(self) -> Tuple[bool, str]:
+        """Alternative connection test using docker exec"""
+        Logger.info("Trying alternative connection method...")
+
+        try:
+            # If using docker, test via docker exec
+            if self.type == 'docker' and self.host == 'localhost':
+                result = subprocess.run(
+                    ['docker', 'exec', 'absencehub_db',
+                     'psql', '-U', self.user, '-d', 'postgres',
+                     '-c', 'SELECT 1;'],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    env={'LANG': 'C', 'LC_ALL': 'C'}
+                )
+
+                if result.returncode == 0:
+                    Logger.success("Database connection verified via docker exec!")
+                    return True, "Connection successful (via docker)"
+                else:
+                    Logger.error(f"Docker exec test failed: {result.stderr}")
+                    return False, "Docker exec failed"
+            else:
+                # For external database, encoding issue is more serious
+                Logger.error("Cannot verify external database with encoding issues")
+                return False, "Encoding error with external database"
+
+        except Exception as e:
+            Logger.error(f"Alternative test failed: {str(e)}")
             return False, str(e)
 
     def to_dict(self) -> Dict:
@@ -320,6 +398,11 @@ class Installer:
     def run(self):
         """Run the complete installation"""
         try:
+            # Set UTF-8 environment for WSL/Linux compatibility
+            for var in ['LC_ALL', 'LANG', 'LANGUAGE']:
+                if not os.environ.get(var) or 'UTF' not in os.environ.get(var, ''):
+                    os.environ[var] = 'C.UTF-8'
+
             # Disable colors on Windows CMD
             if SystemInfo.get_os() == 'windows':
                 Colors.disable()
@@ -444,7 +527,7 @@ class Installer:
                 return
 
             # Strategy 4: macOS-specific handling for M1/M2
-            if SystemInfo.detect_os() == 'macOS' and SystemInfo.detect_architecture() == 'arm64':
+            if SystemInfo.get_os() == 'macos' and SystemInfo.get_architecture() == 'arm64':
                 Logger.warning("macOS ARM64 detected. Attempting architecture-specific installation...")
                 result = self._try_macos_arm64_install(backend_dir, requirements_file)
 
@@ -566,15 +649,15 @@ class Installer:
         Logger.info("\nError Details:")
         Logger.info(last_result['stderr'][:500])  # Show first 500 chars of error
 
-        os_name = SystemInfo.detect_os()
+        os_name = SystemInfo.get_os()
 
-        if os_name == 'macOS':
+        if os_name == 'macos':
             Logger.warning("\nFor macOS, you may need to install Xcode Command Line Tools:")
             Logger.info("  1. Run: xcode-select --install")
             Logger.info("  2. Then retry installation: python3 install.py")
             Logger.info("  3. Or use external PostgreSQL (skip Docker option)")
             Logger.info("\nAlternative: Install Python 3.11 or 3.12 (more compatible)")
-        elif os_name == 'Windows':
+        elif os_name == 'windows':
             Logger.warning("\nFor Windows, you may need Visual C++ Build Tools:")
             Logger.info("  1. Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/")
             Logger.info("  2. Install 'Desktop development with C++'")
@@ -618,7 +701,7 @@ class Installer:
             Logger.error(f"Failed to install frontend dependencies: {result.stderr}")
 
     def setup_docker_database(self):
-        """Setup Docker database container"""
+        """Setup Docker database container using docker-compose"""
         Logger.section("Setting up Docker Database")
 
         Logger.info("Checking Docker...")
@@ -635,30 +718,29 @@ class Installer:
             self._handle_docker_daemon_error()
             return
 
-        Logger.info("Creating PostgreSQL Docker container...")
+        # Check if docker-compose is available
+        docker_compose_cmd = self._get_docker_compose_command()
+        if not docker_compose_cmd:
+            Logger.warning("docker-compose not found, falling back to docker run...")
+            self._setup_docker_database_fallback()
+            return
 
-        # Stop and remove existing container if it exists
-        subprocess.run(
-            ['docker', 'stop', 'absencehub-postgres'],
-            capture_output=True
-        )
-        subprocess.run(
-            ['docker', 'rm', 'absencehub-postgres'],
-            capture_output=True
-        )
+        Logger.info("Using docker-compose to set up PostgreSQL...")
 
-        # Create new container
-        result = subprocess.run([
-            'docker', 'run',
-            '-d',
-            '--name', 'absencehub-postgres',
-            '-e', f'POSTGRES_USER={self.db_config.user}',
-            '-e', f'POSTGRES_PASSWORD={self.db_config.password}',
-            '-e', f'POSTGRES_DB={self.db_config.database}',
-            '-p', '5432:5432',
-            '--restart', 'unless-stopped',
-            'postgres:15'
-        ], capture_output=True, text=True)
+        # Update database config to match docker-compose.yml defaults
+        self.db_config.user = 'absencehub'
+        self.db_config.password = 'password'
+        self.db_config.database = 'absencehub_dev'
+        self.db_config.host = 'localhost'
+        self.db_config.port = 5432
+
+        # Start PostgreSQL service using docker-compose
+        result = subprocess.run(
+            docker_compose_cmd + ['up', '-d', 'postgres'],
+            cwd=str(self.project_dir),
+            capture_output=True,
+            text=True
+        )
 
         if result.returncode == 0:
             Logger.success("PostgreSQL Docker container created and started")
@@ -682,7 +764,76 @@ class Installer:
                 Logger.error("Docker daemon is not running!")
                 self._handle_docker_daemon_error()
             else:
-                Logger.error(f"Failed to create Docker container: {result.stderr}")
+                Logger.error(f"Failed to start Docker container: {result.stderr}")
+                Logger.info("Attempting fallback method...")
+                self._setup_docker_database_fallback()
+
+    def _get_docker_compose_command(self):
+        """Get the appropriate docker-compose command"""
+        # Try docker compose (v2 - plugin)
+        if SystemInfo.check_command_exists('docker'):
+            result = subprocess.run(
+                ['docker', 'compose', 'version'],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                return ['docker', 'compose']
+
+        # Try docker-compose (v1 - standalone)
+        if SystemInfo.check_command_exists('docker-compose'):
+            return ['docker-compose']
+
+        return None
+
+    def _setup_docker_database_fallback(self):
+        """Fallback method using docker run directly"""
+        Logger.info("Creating PostgreSQL Docker container using docker run...")
+
+        # Stop and remove existing container if it exists
+        subprocess.run(
+            ['docker', 'stop', 'absencehub_db'],
+            capture_output=True
+        )
+        subprocess.run(
+            ['docker', 'rm', 'absencehub_db'],
+            capture_output=True
+        )
+
+        # Create new container
+        result = subprocess.run([
+            'docker', 'run',
+            '-d',
+            '--name', 'absencehub_db',
+            '-e', f'POSTGRES_USER={self.db_config.user}',
+            '-e', f'POSTGRES_PASSWORD={self.db_config.password}',
+            '-e', f'POSTGRES_DB={self.db_config.database}',
+            '-e', 'POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C',
+            '-e', 'LC_ALL=C.UTF-8',
+            '-e', 'LANG=C.UTF-8',
+            '-p', '5432:5432',
+            '--restart', 'unless-stopped',
+            'postgres:15-alpine'
+        ], capture_output=True, text=True)
+
+        if result.returncode == 0:
+            Logger.success("PostgreSQL Docker container created and started")
+            Logger.info("Waiting for database to be ready...")
+
+            # Wait for database to be ready
+            import time
+            for i in range(30):
+                time.sleep(1)
+                conn_ok, _ = self.db_config.test_connection()
+                if conn_ok:
+                    Logger.success("Database is ready")
+                    return
+                if (i + 1) % 5 == 0:
+                    Logger.info(f"Still waiting... ({i + 1}s)")
+
+            Logger.warning("Database connection verification timed out, proceeding anyway...")
+        else:
+            Logger.error(f"Failed to create Docker container: {result.stderr}")
 
     def _check_docker_daemon(self) -> bool:
         """Check if Docker daemon is running"""
@@ -782,6 +933,12 @@ class Installer:
     def create_database(self):
         """Create database on external server"""
         try:
+            # Set UTF-8 environment
+            env_backup = {}
+            for var in ['LC_ALL', 'LANG', 'LANGUAGE']:
+                env_backup[var] = os.environ.get(var)
+                os.environ[var] = 'C.UTF-8'
+
             import psycopg2
             from psycopg2 import sql
 
@@ -790,21 +947,41 @@ class Installer:
                 port=self.db_config.port,
                 user=self.db_config.user,
                 password=self.db_config.password,
-                database='postgres'
+                database='postgres',
+                client_encoding='UTF8'
             )
+            conn.set_client_encoding('UTF8')
             conn.autocommit = True
             cursor = conn.cursor()
 
-            cursor.execute(sql.SQL("CREATE DATABASE {} IF NOT EXISTS").format(
-                sql.Identifier(self.db_config.database)
-            ))
+            # Check if database exists
+            cursor.execute(
+                "SELECT 1 FROM pg_database WHERE datname = %s",
+                (self.db_config.database,)
+            )
+            exists = cursor.fetchone()
+
+            if not exists:
+                cursor.execute(sql.SQL("CREATE DATABASE {}").format(
+                    sql.Identifier(self.db_config.database)
+                ))
+                Logger.success(f"Database '{self.db_config.database}' created")
+            else:
+                Logger.success(f"Database '{self.db_config.database}' already exists")
 
             cursor.close()
             conn.close()
-            Logger.success(f"Database '{self.db_config.database}' ready")
+
+            # Restore environment
+            for var, value in env_backup.items():
+                if value is None:
+                    os.environ.pop(var, None)
+                else:
+                    os.environ[var] = value
 
         except Exception as e:
-            Logger.warning(f"Could not create database: {str(e)}")
+            error_msg = str(e) if 'utf-8' not in str(e).lower() else "Database creation error (encoding issue)"
+            Logger.warning(f"Could not create database: {error_msg}")
 
     def insert_seed_data(self):
         """Insert sample data into database"""
@@ -870,11 +1047,11 @@ class Installer:
         print(f"     http://localhost:5173\n")
 
         if self.db_config.type == 'docker':
-            print(f"{Colors.BOLD}To stop the database:{Colors.ENDC}")
-            print(f"  docker stop absencehub-postgres\n")
-
-            print(f"{Colors.BOLD}To restart the database:{Colors.ENDC}")
-            print(f"  docker start absencehub-postgres\n")
+            print(f"{Colors.BOLD}Docker Database Commands:{Colors.ENDC}")
+            print(f"  Stop:    docker-compose stop postgres")
+            print(f"  Start:   docker-compose start postgres")
+            print(f"  Restart: docker-compose restart postgres")
+            print(f"  Logs:    docker-compose logs -f postgres\n")
 
         print(f"{Colors.BOLD}Database Configuration:{Colors.ENDC}")
         print(f"  Host: {self.db_config.host}")

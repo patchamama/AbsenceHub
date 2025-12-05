@@ -4,8 +4,12 @@ import axios from 'axios';
 let API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Fallback ports to try if the main URL fails
-const FALLBACK_PORTS = [5000, 5001, 5002];
+const FALLBACK_PORTS_ENV = import.meta.env.VITE_FALLBACK_PORTS || '5000,5001,5002';
+const FALLBACK_PORTS = FALLBACK_PORTS_ENV.split(',').map(p => parseInt(p.trim()));
 let currentPortIndex = 0;
+
+// Storage key for last working API URL
+const STORAGE_KEY = 'absencehub_api_url';
 
 /**
  * Extract host and port from URL
@@ -18,6 +22,101 @@ function parseUrl(url) {
     port: urlObj.port ? parseInt(urlObj.port) : (urlObj.protocol === 'https:' ? 443 : 80),
     pathname: urlObj.pathname,
   };
+}
+
+/**
+ * Save working API URL to localStorage
+ */
+function saveWorkingUrl(url) {
+  try {
+    localStorage.setItem(STORAGE_KEY, url);
+    console.log(`✓ Saved working API URL: ${url}`);
+  } catch (error) {
+    console.warn('Could not save API URL to localStorage:', error);
+  }
+}
+
+/**
+ * Get last working API URL from localStorage
+ */
+function getLastWorkingUrl() {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Try to read backend port from file (for development)
+ */
+async function readBackendPort() {
+  try {
+    const response = await fetch('/.backend-port', {
+      method: 'GET',
+      cache: 'no-cache'
+    });
+    if (response.ok) {
+      const text = await response.text();
+      const port = parseInt(text.trim());
+      if (!isNaN(port)) {
+        console.log(`✓ Found backend running on port ${port}`);
+        return port;
+      }
+    }
+  } catch (error) {
+    // File doesn't exist or fetch failed - not an error in production
+  }
+  return null;
+}
+
+/**
+ * Initialize API URL with smart detection
+ */
+async function initializeApiUrl() {
+  // Try last working URL first
+  const lastUrl = getLastWorkingUrl();
+  if (lastUrl && lastUrl !== API_BASE_URL) {
+    console.log(`Trying last working URL: ${lastUrl}`);
+    try {
+      const response = await fetch(`${lastUrl}/health`, {
+        method: 'GET',
+        cache: 'no-cache',
+        timeout: 2000
+      });
+      if (response.ok) {
+        API_BASE_URL = lastUrl;
+        api.defaults.baseURL = lastUrl;
+        console.log(`✓ Using last working API URL: ${lastUrl}`);
+        return;
+      }
+    } catch (error) {
+      console.log('Last working URL no longer responds');
+    }
+  }
+
+  // Try to read backend port file
+  const backendPort = await readBackendPort();
+  if (backendPort) {
+    const parsed = parseUrl(API_BASE_URL);
+    const detectedUrl = `${parsed.protocol}//${parsed.hostname}:${backendPort}${parsed.pathname}`;
+    try {
+      const response = await fetch(`${detectedUrl}/health`, {
+        method: 'GET',
+        cache: 'no-cache',
+        timeout: 2000
+      });
+      if (response.ok) {
+        API_BASE_URL = detectedUrl;
+        api.defaults.baseURL = detectedUrl;
+        saveWorkingUrl(detectedUrl);
+        console.log(`✓ Auto-detected backend at: ${detectedUrl}`);
+        return;
+      }
+    } catch (error) {
+      console.log('Backend port file exists but endpoint not responding');
+    }
+  }
 }
 
 /**
@@ -37,6 +136,9 @@ function getFallbackUrl() {
   return null;
 }
 
+// Initialize API URL detection
+initializeApiUrl();
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -45,10 +147,28 @@ const api = axios.create({
 });
 
 /**
+ * Request interceptor to ensure we're using the latest URL
+ */
+api.interceptors.request.use(
+  config => {
+    // Ensure we're using the current API_BASE_URL
+    config.baseURL = API_BASE_URL;
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+/**
  * Response interceptor to handle port failures
  */
 api.interceptors.response.use(
-  response => response,
+  response => {
+    // Save working URL on successful response
+    if (API_BASE_URL !== getLastWorkingUrl()) {
+      saveWorkingUrl(API_BASE_URL);
+    }
+    return response;
+  },
   async error => {
     // If the request failed and we haven't tried fallback ports yet
     if (error.response === undefined && currentPortIndex < FALLBACK_PORTS.length) {
@@ -61,7 +181,8 @@ api.interceptors.response.use(
         console.log(`✓ Using fallback API URL: ${fallbackUrl}`);
 
         // Retry the original request with the new URL
-        return api.request(error.config);
+        const retryConfig = { ...error.config, baseURL: fallbackUrl };
+        return api.request(retryConfig);
       }
     }
 

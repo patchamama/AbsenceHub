@@ -1,6 +1,7 @@
 """Entry point for Flask application."""
 import os
 import socket
+from pathlib import Path
 from app import create_app
 
 
@@ -19,6 +20,17 @@ def find_available_port(preferred_port: int = 5000, max_attempts: int = 10) -> i
     return preferred_port  # Return preferred if all else fails
 
 
+def save_port_info(port: int):
+    """Save the current port to a file for frontend discovery"""
+    project_root = Path(__file__).parent.parent
+    port_file = project_root / '.backend-port'
+    try:
+        with open(port_file, 'w') as f:
+            f.write(f"{port}\n")
+    except Exception as e:
+        print(f"Warning: Could not save port info: {e}")
+
+
 app = create_app(os.environ.get("FLASK_ENV", "development"))
 
 if __name__ == "__main__":
@@ -27,7 +39,12 @@ if __name__ == "__main__":
     port = find_available_port(preferred_port)
 
     if port != preferred_port:
-        print(f"⚠ Port {preferred_port} is in use. Using port {port} instead.")
+        print(f"⚠  Port {preferred_port} is in use. Using port {port} instead.")
 
-    print(f"Starting Flask server on port {port}...")
+    # Save port info for frontend
+    save_port_info(port)
+
+    print(f"✓ Flask backend running on http://localhost:{port}")
+    print(f"✓ API endpoints available at http://localhost:{port}/api")
+
     app.run(host="0.0.0.0", port=port, debug=app.debug)

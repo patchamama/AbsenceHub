@@ -65,12 +65,12 @@ docker-compose up -d postgres
 
 ```bash
 # Create virtual environment
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 cd backend
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # Create .env file
 cp .env.example .env
@@ -102,6 +102,68 @@ cp .env.example .env
 npm run dev
 # Frontend will be available at http://localhost:5173
 ```
+
+### Port Configuration
+
+#### Backend Port Configuration
+
+The backend automatically detects and uses available ports:
+
+- **Default Port**: `5000` (configurable via `FLASK_PORT` in `.env`)
+- **Automatic Fallback**: If port 5000 is in use, the backend will automatically try ports 5001, 5002, etc.
+- **Port Discovery File**: The backend writes its active port to `.backend-port` file for frontend discovery
+
+**Example: Configure custom default port**
+```bash
+# backend/.env
+FLASK_PORT=5001  # Use port 5001 as the default
+```
+
+When you start the backend, you'll see:
+```bash
+✓ Flask backend running on http://localhost:5000
+✓ API endpoints available at http://localhost:5000/api
+```
+
+Or if port 5000 is occupied:
+```bash
+⚠  Port 5000 is in use. Using port 5001 instead.
+✓ Flask backend running on http://localhost:5001
+✓ API endpoints available at http://localhost:5001/api
+```
+
+#### Frontend Backend Discovery
+
+The frontend automatically discovers the backend through multiple strategies:
+
+1. **Auto-Detection**: Reads `.backend-port` file to find the active backend port
+2. **localStorage Cache**: Remembers the last working backend URL
+3. **Fallback Ports**: Tries ports 5000, 5001, 5002 if configured URL fails
+4. **Manual Configuration**: Set `VITE_API_URL` in `.env` for custom backend URL
+
+**Example: Configure frontend for different environments**
+```bash
+# frontend/.env
+
+# Development (local)
+VITE_API_URL=http://localhost:5000/api
+
+# Development (different machine)
+VITE_API_URL=http://192.168.1.100:5000/api
+
+# Production
+VITE_API_URL=https://api.example.com/api
+
+# Fallback ports (comma-separated)
+VITE_FALLBACK_PORTS=5000,5001,5002
+```
+
+**How it works**:
+- The frontend first tries the URL from `VITE_API_URL`
+- If that fails, it reads `.backend-port` file to auto-detect the backend
+- If that fails, it tries the last working URL from localStorage
+- Finally, it tries each fallback port sequentially
+- The working URL is saved to localStorage for faster future connections
 
 ## Development Workflow
 
