@@ -16,6 +16,7 @@ export default function AbsenceForm({
     absence_type: '',
     start_date: '',
     end_date: '',
+    is_half_day: false,
   });
 
   const [errors, setErrors] = useState({});
@@ -31,6 +32,7 @@ export default function AbsenceForm({
         absence_type: absence.absence_type,
         start_date: absence.start_date,
         end_date: absence.end_date,
+        is_half_day: absence.is_half_day || false,
       });
     }
   }, [absence]);
@@ -78,12 +80,44 @@ export default function AbsenceForm({
   // Handle field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const newFormData = { ...formData, [name]: value };
+    setFormData(newFormData);
 
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
+
+    // Validate date range in real-time
+    if (name === 'start_date' || name === 'end_date') {
+      const startDate = name === 'start_date' ? value : formData.start_date;
+      const endDate = name === 'end_date' ? value : formData.end_date;
+
+      if (startDate && endDate) {
+        const dateRangeError = validateDateRange(startDate, endDate);
+        if (dateRangeError) {
+          setErrors((prev) => ({ ...prev, end_date: dateRangeError }));
+        } else {
+          setErrors((prev) => ({ ...prev, end_date: null }));
+        }
+      }
+    }
+
+    // If start_date changes and is_half_day is true, update end_date to match
+    if (name === 'start_date' && formData.is_half_day) {
+      newFormData.end_date = value;
+      setFormData(newFormData);
+    }
+  };
+
+  // Handle half-day checkbox change
+  const handleHalfDayChange = (e) => {
+    const checked = e.target.checked;
+    setFormData((prev) => ({
+      ...prev,
+      is_half_day: checked,
+      end_date: checked ? prev.start_date : prev.end_date,
+    }));
   };
 
   // Validate individual field
@@ -158,13 +192,13 @@ export default function AbsenceForm({
       newErrors.start_date = t('error.required');
     }
 
-    // Validate end date
-    if (!formData.end_date) {
+    // Validate end date (only required if not half day)
+    if (!formData.is_half_day && !formData.end_date) {
       newErrors.end_date = t('error.required');
     }
 
-    // Validate date range
-    if (formData.start_date && formData.end_date) {
+    // Validate date range (skip if half day since end_date is auto-set)
+    if (formData.start_date && formData.end_date && !formData.is_half_day) {
       const dateRangeError = validateDateRange(formData.start_date, formData.end_date);
       if (dateRangeError) {
         newErrors.dateRange = dateRangeError;
@@ -183,7 +217,8 @@ export default function AbsenceForm({
       employee_fullname: formData.employee_fullname || null,
       absence_type: formData.absence_type,
       start_date: formData.start_date,
-      end_date: formData.end_date,
+      end_date: formData.is_half_day ? formData.start_date : formData.end_date,
+      is_half_day: formData.is_half_day,
     });
   };
 
@@ -193,7 +228,7 @@ export default function AbsenceForm({
     label: typeof type === 'string' ? type : type.label,
   }));
 
-  const isEditMode = !!absence;
+  const isEditMode = !!(absence && absence.id);
 
   return (
     <div
@@ -272,17 +307,35 @@ export default function AbsenceForm({
             required={true}
           />
 
-          {/* End Date */}
-          <FormField
-            label={t('field.endDate')}
-            name="end_date"
-            type="date"
-            value={formData.end_date}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={errors.end_date}
-            required={true}
-          />
+          {/* Half Day Checkbox */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="is_half_day"
+              name="is_half_day"
+              checked={formData.is_half_day}
+              onChange={handleHalfDayChange}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="is_half_day" className="ml-2 block text-sm text-gray-700">
+              {t('field.halfDay')}
+            </label>
+          </div>
+
+          {/* End Date - Only show if not half day */}
+          {!formData.is_half_day && (
+            <FormField
+              label={t('field.endDate')}
+              name="end_date"
+              type="date"
+              value={formData.end_date}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.end_date}
+              min={formData.start_date}
+              required={true}
+            />
+          )}
 
           {/* Date Range Error */}
           {errors.dateRange && (

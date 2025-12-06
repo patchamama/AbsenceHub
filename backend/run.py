@@ -1,7 +1,19 @@
 """Entry point for Flask application."""
 import os
+import sys
 import socket
 from pathlib import Path
+
+# Force UTF-8 encoding for WSL2 compatibility
+os.environ.setdefault('LC_ALL', 'C.UTF-8')
+os.environ.setdefault('LANG', 'C.UTF-8')
+os.environ.setdefault('LANGUAGE', 'C.UTF-8')
+
+# Set Python's default encoding to UTF-8
+if sys.version_info >= (3, 7):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 from app import create_app
 
 

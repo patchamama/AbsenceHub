@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import { t, getLanguage, setLanguage, getAvailableLanguages } from './utils/i18n';
 import {
   getAllAbsences,
-  getAbsenceTypes,
   getStatistics,
   createAbsence,
   updateAbsence,
   deleteAbsence,
 } from './services/absenceApi';
+import { getAllAbsenceTypes } from './services/absenceTypeApi';
 import AbsenceForm from './components/AbsenceForm';
 import AbsenceList from './components/AbsenceList';
 import AbsenceFilters from './components/AbsenceFilters';
+import AbsenceTypeSettings from './components/AbsenceTypeSettings';
+import AbsenceCalendar from './components/AbsenceCalendar';
 import './App.css';
 
 function App() {
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'calendar', 'settings'
   const [absences, setAbsences] = useState([]);
   const [absenceTypes, setAbsenceTypes] = useState([]);
   const [statistics, setStatistics] = useState(null);
@@ -25,6 +28,7 @@ function App() {
   const [editingAbsence, setEditingAbsence] = useState(null);
   const [filters, setFilters] = useState({});
   const [formLoading, setFormLoading] = useState(false);
+  const [lastModifiedId, setLastModifiedId] = useState(null);
 
   // Fetch initial data and sync HTML lang attribute
   useEffect(() => {
@@ -60,12 +64,21 @@ function App() {
 
       const [absencesRes, typesRes, statsRes] = await Promise.all([
         getAllAbsences(),
-        getAbsenceTypes(),
+        getAllAbsenceTypes(true), // Get from database
         getStatistics(),
       ]);
 
       setAbsences(absencesRes.data?.data || []);
-      setAbsenceTypes(typesRes.data?.data || []);
+
+      // Format types for compatibility with existing code
+      const types = (typesRes.data?.data || []).map(type => ({
+        value: type.name,
+        label: currentLanguage === 'de' ? type.name_de : type.name_en,
+        color: type.color,
+        ...type
+      }));
+      setAbsenceTypes(types);
+
       setStatistics(statsRes.data?.data || null);
     } catch (err) {
       setError(t('message.loadingError'));
@@ -89,7 +102,7 @@ function App() {
 
       const [absencesRes, statsRes] = await Promise.all([
         getAllAbsences(filters),
-        getStatistics(),
+        getStatistics(filters),  // Pass filters to statistics
       ]);
 
       setAbsences(absencesRes.data?.data || []);
@@ -112,27 +125,46 @@ function App() {
     setShowForm(true);
   };
 
+  const handleAddClick = (absence) => {
+    // Create a new absence template with service_account and employee_fullname pre-filled
+    const absenceTemplate = {
+      service_account: absence.service_account,
+      employee_fullname: absence.employee_fullname || '',
+    };
+    setEditingAbsence(absenceTemplate);
+    setShowForm(true);
+  };
+
   const handleFormSubmit = async (formData) => {
     try {
       setFormLoading(true);
       setError(null);
 
-      if (editingAbsence) {
-        // Update mode
-        await updateAbsence(editingAbsence.id, formData);
+      let result;
+      if (editingAbsence && editingAbsence.id) {
+        // Update mode (only if we have an actual ID)
+        result = await updateAbsence(editingAbsence.id, formData);
         setSuccessMessage(t('message.updatedSuccess'));
+        setLastModifiedId(editingAbsence.id);
       } else {
-        // Create mode
-        await createAbsence(formData);
+        // Create mode (includes new entries and "Add" duplicates without ID)
+        result = await createAbsence(formData);
         setSuccessMessage(t('message.createdSuccess'));
+        // Set the ID of the newly created absence
+        if (result.data?.data?.id) {
+          setLastModifiedId(result.data.data.id);
+        }
       }
 
       setShowForm(false);
       setEditingAbsence(null);
       await refreshData();
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Clear success message and highlight after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setLastModifiedId(null);
+      }, 5000);
     } catch (err) {
       setError(err.response?.data?.error || t('message.savingError'));
       console.error('Error saving absence:', err);
@@ -169,6 +201,11 @@ function App() {
     setFilters({});
   };
 
+  const handleCellFilter = (filterType, filterValue) => {
+    // Apply filter for the specific cell clicked
+    setFilters({ [filterType]: filterValue });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -195,6 +232,40 @@ function App() {
               </select>
             </div>
           </div>
+
+          {/* Navigation */}
+          <nav className="mt-4 flex gap-2">
+            <button
+              onClick={() => setCurrentView('list')}
+              className={`px-4 py-2 rounded-md transition-colors ${
+                currentView === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              📋 Liste
+            </button>
+            <button
+              onClick={() => setCurrentView('calendar')}
+              className={`px-4 py-2 rounded-md transition-colors ${
+                currentView === 'calendar'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              📅 Kalender
+            </button>
+            <button
+              onClick={() => setCurrentView('settings')}
+              className={`px-4 py-2 rounded-md transition-colors ${
+                currentView === 'settings'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              ⚙️ Einstellungen
+            </button>
+          </nav>
         </div>
       </header>
 
@@ -227,80 +298,188 @@ function App() {
             <p className="text-gray-600">{t('status.loading')}</p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {/* Statistics Section */}
-            {statistics && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-sm font-medium text-gray-500 uppercase">
-                    {t('stats.totalAbsences')}
-                  </h3>
-                  <p className="mt-2 text-3xl font-bold text-gray-900">
-                    {statistics.total_absences}
-                  </p>
+          <>
+            {/* List View */}
+            {currentView === 'list' && (
+              <div className="space-y-8">
+                {/* Active Filters Display */}
+                {Object.keys(filters).length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-blue-900">
+                        Aktive Filter:
+                      </h3>
+                      <button
+                        onClick={handleClearFilters}
+                        className="text-xs text-blue-700 hover:text-blue-900 underline"
+                      >
+                        Alle löschen
+                      </button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {filters.service_account && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Service Account: <strong className="ml-1">{filters.service_account}</strong>
+                        </span>
+                      )}
+                      {filters.employee_fullname && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Name: <strong className="ml-1">{filters.employee_fullname}</strong>
+                        </span>
+                      )}
+                      {filters.absence_type && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Typ: <strong className="ml-1">{filters.absence_type}</strong>
+                        </span>
+                      )}
+                      {filters.month && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Monat: <strong className="ml-1">{filters.month}</strong>
+                        </span>
+                      )}
+                      {filters.start_date && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Von: <strong className="ml-1">{filters.start_date}</strong>
+                        </span>
+                      )}
+                      {filters.end_date && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Bis: <strong className="ml-1">{filters.end_date}</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Statistics Section */}
+                {statistics && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-sm font-medium text-gray-500 uppercase">
+                        Total Days
+                      </h3>
+                      <p className="mt-2 text-3xl font-bold text-gray-900">
+                        {statistics.total_days || 0}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        (including 0.5 for half days)
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-sm font-medium text-gray-500 uppercase">
+                        {t('stats.uniqueEmployees')}
+                      </h3>
+                      <p className="mt-2 text-3xl font-bold text-gray-900">
+                        {statistics.unique_employees}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-sm font-medium text-gray-500 uppercase">
+                        Days by Type
+                      </h3>
+                      <ul className="mt-2 space-y-1">
+                        {Object.entries(statistics.by_type || {}).map(([type, days]) => (
+                          <li key={type} className="text-sm text-gray-600">
+                            {t(`absence.${type}`)}:{' '}
+                            <span className="font-bold">{days} {days === 1 ? 'day' : 'days'}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Absence Form Modal */}
+                {showForm && (
+                  <AbsenceForm
+                    absence={editingAbsence}
+                    absenceTypes={absenceTypes}
+                    onSubmit={handleFormSubmit}
+                    onCancel={handleFormCancel}
+                    loading={formLoading}
+                  />
+                )}
+
+                {/* Filters Section */}
+                <AbsenceFilters
+                  absenceTypes={absenceTypes}
+                  onFilter={handleApplyFilters}
+                  onClear={handleClearFilters}
+                />
+
+                {/* Add Absence Button */}
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-medium text-gray-900">{t('list.title')}</h2>
+                  <button
+                    onClick={handleCreateClick}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    {t('button.add')}
+                  </button>
                 </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-sm font-medium text-gray-500 uppercase">
-                    {t('stats.uniqueEmployees')}
-                  </h3>
-                  <p className="mt-2 text-3xl font-bold text-gray-900">
-                    {statistics.unique_employees}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-sm font-medium text-gray-500 uppercase">
-                    {t('stats.byType')}
-                  </h3>
-                  <ul className="mt-2 space-y-1">
-                    {Object.entries(statistics.by_type || {}).map(([type, count]) => (
-                      <li key={type} className="text-sm text-gray-600">
-                        {t(`absence.${type}`)}:{' '}
-                        <span className="font-bold">{count}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+
+                {/* Absences List Section */}
+                <AbsenceList
+                  absences={absences}
+                  onAdd={handleAddClick}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteAbsence}
+                  onFilter={handleCellFilter}
+                  loading={loading}
+                  error={error}
+                  lastModifiedId={lastModifiedId}
+                />
               </div>
             )}
 
-            {/* Absence Form Modal */}
-            {showForm && (
-              <AbsenceForm
-                absence={editingAbsence}
-                absenceTypes={absenceTypes}
-                onSubmit={handleFormSubmit}
-                onCancel={handleFormCancel}
-                loading={formLoading}
-              />
+            {/* Calendar View */}
+            {currentView === 'calendar' && (
+              <>
+                {/* Active Filters Display for Calendar */}
+                {Object.keys(filters).length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-blue-900">
+                        Aktive Filter:
+                      </h3>
+                      <button
+                        onClick={handleClearFilters}
+                        className="text-xs text-blue-700 hover:text-blue-900 underline"
+                      >
+                        Alle löschen
+                      </button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {filters.service_account && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Service Account: <strong className="ml-1">{filters.service_account}</strong>
+                        </span>
+                      )}
+                      {filters.employee_fullname && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Name: <strong className="ml-1">{filters.employee_fullname}</strong>
+                        </span>
+                      )}
+                      {filters.absence_type && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                          Typ: <strong className="ml-1">{filters.absence_type}</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <AbsenceCalendar
+                  absences={absences}
+                  absenceTypes={absenceTypes}
+                />
+              </>
             )}
 
-            {/* Filters Section */}
-            <AbsenceFilters
-              absenceTypes={absenceTypes}
-              onFilter={handleApplyFilters}
-              onClear={handleClearFilters}
-            />
-
-            {/* Add Absence Button */}
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-medium text-gray-900">{t('list.title')}</h2>
-              <button
-                onClick={handleCreateClick}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                {t('button.add')}
-              </button>
-            </div>
-
-            {/* Absences List Section */}
-            <AbsenceList
-              absences={absences}
-              onEdit={handleEditClick}
-              onDelete={handleDeleteAbsence}
-              loading={loading}
-              error={error}
-            />
-          </div>
+            {/* Settings View */}
+            {currentView === 'settings' && (
+              <AbsenceTypeSettings />
+            )}
+          </>
         )}
       </main>
     </div>

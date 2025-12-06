@@ -20,6 +20,11 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL"
     ) or "postgresql://localhost/absencehub_dev"
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {
+            "client_encoding": "utf8"
+        }
+    }
     SQLALCHEMY_ECHO = True
     CORS_ORIGINS = (
         os.environ.get("CORS_ORIGINS") or "http://localhost:5173,http://localhost:3000"

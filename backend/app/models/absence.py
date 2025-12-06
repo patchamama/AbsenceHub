@@ -14,6 +14,7 @@ class EmployeeAbsence(db.Model):
     absence_type = db.Column(db.String(50), nullable=False, index=True)
     start_date = db.Column(db.Date, nullable=False, index=True)
     end_date = db.Column(db.Date, nullable=False, index=True)
+    is_half_day = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -34,9 +35,19 @@ class EmployeeAbsence(db.Model):
             "absence_type": self.absence_type,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "end_date": self.end_date.isoformat() if self.end_date else None,
+            "is_half_day": self.is_half_day,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+    def calculate_days(self):
+        """Calculate the number of days for this absence."""
+        if self.is_half_day:
+            return 0.5
+        if self.start_date and self.end_date:
+            delta = self.end_date - self.start_date
+            return delta.days + 1  # +1 because both days are inclusive
+        return 0
 
     @classmethod
     def from_dict(cls, data):
@@ -47,4 +58,5 @@ class EmployeeAbsence(db.Model):
             absence_type=data.get("absence_type"),
             start_date=data.get("start_date"),
             end_date=data.get("end_date"),
+            is_half_day=data.get("is_half_day", False),
         )

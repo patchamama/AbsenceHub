@@ -53,6 +53,13 @@ class AbsenceService:
 
         Args:
             filters (dict): Filter parameters
+                - service_account: Exact match or LIKE search
+                - employee_fullname: LIKE search
+                - absence_type: Exact match
+                - start_date: Filter by date >= start_date
+                - end_date: Filter by date <= end_date
+                - month: Filter by specific month (YYYY-MM format)
+                - year: Filter by specific year (YYYY format)
 
         Returns:
             list: List of EmployeeAbsence objects
@@ -60,22 +67,74 @@ class AbsenceService:
         query = EmployeeAbsence.query
 
         if filters:
+            # LIKE search for service_account
             if filters.get("service_account"):
+                service_account = filters.get("service_account")
                 query = query.filter(
-                    EmployeeAbsence.service_account == filters.get("service_account")
+                    EmployeeAbsence.service_account.ilike(f"%{service_account}%")
                 )
+
+            # LIKE search for employee_fullname
+            if filters.get("employee_fullname"):
+                fullname = filters.get("employee_fullname")
+                query = query.filter(
+                    EmployeeAbsence.employee_fullname.ilike(f"%{fullname}%")
+                )
+
+            # Exact match for absence_type
             if filters.get("absence_type"):
                 query = query.filter(
                     EmployeeAbsence.absence_type == filters.get("absence_type")
                 )
-            if filters.get("start_date"):
-                query = query.filter(
-                    EmployeeAbsence.start_date >= filters.get("start_date")
-                )
-            if filters.get("end_date"):
-                query = query.filter(EmployeeAbsence.end_date <= filters.get("end_date"))
 
-        return query.order_by(EmployeeAbsence.start_date.desc()).all()
+            # Filter by month (YYYY-MM format)
+            if filters.get("month"):
+                from datetime import datetime
+                month_str = filters.get("month")
+                try:
+                    # Parse month (format: YYYY-MM)
+                    year, month = map(int, month_str.split("-"))
+                    # Get first day of month
+                    from calendar import monthrange
+                    last_day = monthrange(year, month)[1]
+                    start_of_month = datetime(year, month, 1).date()
+                    end_of_month = datetime(year, month, last_day).date()
+
+                    query = query.filter(
+                        EmployeeAbsence.start_date <= end_of_month,
+                        EmployeeAbsence.end_date >= start_of_month
+                    )
+                except (ValueError, AttributeError):
+                    pass  # Invalid month format, skip filter
+
+            # Filter by year (YYYY format)
+            elif filters.get("year"):
+                from datetime import datetime
+                year_str = filters.get("year")
+                try:
+                    year = int(year_str)
+                    start_of_year = datetime(year, 1, 1).date()
+                    end_of_year = datetime(year, 12, 31).date()
+
+                    query = query.filter(
+                        EmployeeAbsence.start_date <= end_of_year,
+                        EmployeeAbsence.end_date >= start_of_year
+                    )
+                except (ValueError, AttributeError):
+                    pass  # Invalid year format, skip filter
+
+            # Date range filters (if month/year not provided)
+            elif filters.get("start_date") or filters.get("end_date"):
+                if filters.get("start_date"):
+                    query = query.filter(
+                        EmployeeAbsence.start_date >= filters.get("start_date")
+                    )
+                if filters.get("end_date"):
+                    query = query.filter(
+                        EmployeeAbsence.end_date <= filters.get("end_date")
+                    )
+
+        return query.order_by(EmployeeAbsence.updated_at.desc()).all()
 
     @staticmethod
     def get_by_id(absence_id):
@@ -136,6 +195,11 @@ class AbsenceService:
             absence.start_date = data.get("start_date")
         if "end_date" in data:
             absence.end_date = data.get("end_date")
+        if "is_half_day" in data:
+            absence.is_half_day = data.get("is_half_day")
+            # If half day, set end_date = start_date
+            if absence.is_half_day and absence.start_date:
+                absence.end_date = absence.start_date
 
         db.session.commit()
         return absence
@@ -189,35 +253,42 @@ class AbsenceService:
             )
 
     @staticmethod
-    def get_statistics():
+    def get_statistics(filters=None):
         """
-        Get absence statistics.
+        Get absence statistics calculating days instead of count.
+
+        Args:
+            filters (dict): Optional filters to apply
 
         Returns:
-            dict: Statistics about absences
+            dict: Statistics about absences in days
         """
-        total_absences = EmployeeAbsence.query.count()
-        unique_employees = (
-            db.session.query(EmployeeAbsence.service_account)
-            .distinct()
-            .count()
-        )
+        # Start with base query
+        query = EmployeeAbsence.query
 
-        # Count by type
+        # Apply filters if provided
+        if filters:
+            query = AbsenceService._apply_filters(query, filters)
+
+        # Get all filtered absences
+        absences = query.all()
+
+        # Calculate total days
+        total_days = sum(absence.calculate_days() for absence in absences)
+
+        # Count unique employees
+        unique_employees = len(set(absence.service_account for absence in absences))
+
+        # Calculate days by type
         by_type = {}
-        for absence_type in [
-            "Urlaub",
-            "Krankheit",
-            "Home Office",
-            "Sonstige",
-        ]:
-            count = EmployeeAbsence.query.filter(
-                EmployeeAbsence.absence_type == absence_type
-            ).count()
-            by_type[absence_type] = count
+        for absence in absences:
+            absence_type = absence.absence_type
+            if absence_type not in by_type:
+                by_type[absence_type] = 0
+            by_type[absence_type] += absence.calculate_days()
 
         return {
-            "total_absences": total_absences,
+            "total_days": total_days,
             "unique_employees": unique_employees,
             "by_type": by_type,
         }

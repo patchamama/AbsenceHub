@@ -17,6 +17,7 @@ export default function FormField({
   options = [],
   className = '',
   ariaDescribedBy,
+  min,
 }) {
   const inputId = `${name}-input`;
   const errorId = `${name}-error`;
@@ -72,6 +73,7 @@ export default function FormField({
           disabled={disabled}
           placeholder={placeholder}
           required={required}
+          min={min}
           aria-invalid={!!error}
           aria-describedby={describedBy}
           className={`${commonInputClasses} ${errorClasses}`}

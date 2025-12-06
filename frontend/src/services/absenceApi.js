@@ -216,8 +216,8 @@ export const getAbsenceTypes = () => {
   return api.get('/absence-types');
 };
 
-export const getStatistics = () => {
-  return api.get('/statistics');
+export const getStatistics = (filters = {}) => {
+  return api.get('/statistics', { params: filters });
 };
 
 // Health check

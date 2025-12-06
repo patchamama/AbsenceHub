@@ -1,4 +1,7 @@
 """Application factory for creating Flask app instances."""
+# IMPORTANT: Import db_utils first to configure environment for database
+from app import db_utils  # noqa: F401
+
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -37,8 +40,10 @@ def create_app(config_name=None):
 
     # Register blueprints
     from app.routes import absence_bp, health_bp
+    from app.routes.absence_type_routes import absence_type_bp
 
     app.register_blueprint(absence_bp, url_prefix="/api")
+    app.register_blueprint(absence_type_bp, url_prefix="/api")
     app.register_blueprint(health_bp)
 
     # Error handlers

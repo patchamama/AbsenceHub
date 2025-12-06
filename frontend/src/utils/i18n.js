@@ -23,6 +23,7 @@ const translations = {
     'field.absenceType': 'Absence Type',
     'field.startDate': 'Start Date',
     'field.endDate': 'End Date',
+    'field.halfDay': 'Half Day',
     'placeholder.employeeName': 'John Doe (optional)',
     'placeholder.serviceAccount': 's.john',
     'button.submit': 'Submit',
@@ -118,6 +119,7 @@ const translations = {
     'field.absenceType': 'Abwesenheitstyp',
     'field.startDate': 'Startdatum',
     'field.endDate': 'Enddatum',
+    'field.halfDay': 'Halber Tag',
     'placeholder.employeeName': 'John Doe (optional)',
     'placeholder.serviceAccount': 's.john',
     'button.submit': 'Absenden',
@@ -199,7 +201,7 @@ const translations = {
   },
 };
 
-let currentLanguage = localStorage.getItem('language') || 'en';
+let currentLanguage = localStorage.getItem('language') || 'de';
 
 export const setLanguage = (lang) => {
   if (translations[lang]) {

@@ -1,0 +1,33 @@
+{
+  "system": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "python_version": "3.12.3"
+  },
+  "requirements": {
+    "python": true,
+    "node": true,
+    "npm": true,
+    "git": true,
+    "docker": true
+  },
+  "backend": {
+    "directory": true,
+    "requirements_file": true,
+    "dependencies": true,
+    "main_files": true
+  },
+  "frontend": {
+    "directory": true,
+    "package_json": true,
+    "dependencies": true,
+    "configuration": true
+  },
+  "database": {
+    "config": true,
+    "connection": false
+  },
+  "api": {
+    "ports": false
+  }
+}

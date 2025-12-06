@@ -14,18 +14,28 @@ def get_absences():
         # Build filters from query parameters
         filters = {}
         service_account = request.args.get("service_account")
+        employee_fullname = request.args.get("employee_fullname")
         absence_type = request.args.get("absence_type")
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
+        month = request.args.get("month")  # Format: YYYY-MM
+        year = request.args.get("year")    # Format: YYYY
 
         if service_account:
             filters["service_account"] = service_account
+        if employee_fullname:
+            filters["employee_fullname"] = employee_fullname
         if absence_type:
             filters["absence_type"] = absence_type
-        if start_date:
-            filters["start_date"] = datetime.strptime(start_date, "%Y-%m-%d").date()
-        if end_date:
-            filters["end_date"] = datetime.strptime(end_date, "%Y-%m-%d").date()
+        if month:
+            filters["month"] = month
+        elif year:
+            filters["year"] = year
+        else:
+            if start_date:
+                filters["start_date"] = datetime.strptime(start_date, "%Y-%m-%d").date()
+            if end_date:
+                filters["end_date"] = datetime.strptime(end_date, "%Y-%m-%d").date()
 
         absences = AbsenceService.get_all(filters if filters else None)
         return (
@@ -37,9 +47,22 @@ def get_absences():
             ),
             200,
         )
-    except Exception as e:
+    except UnicodeDecodeError as e:
+        # Handle encoding errors specifically
+        import traceback
+        error_msg = f"Encoding error: {repr(e)}"
         return (
-            jsonify({"success": False, "error": str(e)}),
+            jsonify({"success": False, "error": error_msg, "traceback": traceback.format_exc()}),
+            500,
+        )
+    except Exception as e:
+        # Try to safely convert exception to string
+        try:
+            error_msg = str(e)
+        except UnicodeDecodeError:
+            error_msg = repr(e)
+        return (
+            jsonify({"success": False, "error": error_msg}),
             400,
         )
 
@@ -153,20 +176,28 @@ def delete_absence(absence_id):
         )
 
 
-@absence_bp.route("/absence-types", methods=["GET"])
-def get_absence_types():
-    """Get list of valid absence types."""
-    return (
-        jsonify({"success": True, "data": ALLOWED_ABSENCE_TYPES}),
-        200,
-    )
-
-
 @absence_bp.route("/statistics", methods=["GET"])
 def get_statistics():
-    """Get absence statistics."""
+    """Get absence statistics with optional filters."""
     try:
-        stats = AbsenceService.get_statistics()
+        # Get filters from query parameters
+        filters = {}
+        if request.args.get("service_account"):
+            filters["service_account"] = request.args.get("service_account")
+        if request.args.get("employee_fullname"):
+            filters["employee_fullname"] = request.args.get("employee_fullname")
+        if request.args.get("absence_type"):
+            filters["absence_type"] = request.args.get("absence_type")
+        if request.args.get("start_date"):
+            filters["start_date"] = request.args.get("start_date")
+        if request.args.get("end_date"):
+            filters["end_date"] = request.args.get("end_date")
+        if request.args.get("month"):
+            filters["month"] = request.args.get("month")
+        if request.args.get("year"):
+            filters["year"] = request.args.get("year")
+
+        stats = AbsenceService.get_statistics(filters if filters else None)
         return (
             jsonify({"success": True, "data": stats}),
             200,
