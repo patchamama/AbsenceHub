@@ -158,7 +158,9 @@ export default function AbsenceList({
                   {formatDate(absence.end_date)}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {duration} {duration === 1 ? t('list.day') : t('list.days')}
+                  {absence.is_half_day
+                    ? t('list.halfDay')
+                    : `${duration} ${duration === 1 ? t('list.day') : t('list.days')}`}
                 </td>
                 <td className="px-6 py-4 text-sm space-x-2">
                   <button

@@ -57,6 +57,7 @@ const translations = {
     'list.actions': 'Actions',
     'list.days': 'days',
     'list.day': 'day',
+    'list.halfDay': 'half day',
 
     // Filters
     'filter.title': 'Filters',
@@ -185,6 +186,7 @@ const translations = {
     'list.actions': 'Aktionen',
     'list.days': 'Tage',
     'list.day': 'Tag',
+    'list.halfDay': 'halber Tag',
 
     // Filters
     'filter.title': 'Filter',

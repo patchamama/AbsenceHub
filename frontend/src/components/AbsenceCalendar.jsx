@@ -58,7 +58,12 @@ export default function AbsenceCalendar({ absences = [], absenceTypes = [], init
 
   // Check if date has absences
   const getAbsencesForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Format date as YYYY-MM-DD in local timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
     return absences.filter((absence) => {
       return dateStr >= absence.start_date && dateStr <= absence.end_date;
     });
@@ -181,18 +186,29 @@ export default function AbsenceCalendar({ absences = [], absenceTypes = [], init
                       {day.absences.map((absence) => {
                         const color = getTypeColor(absence.absence_type);
                         const displayName = absence.employee_fullname || absence.service_account;
+                        const isHalfDay = absence.is_half_day;
 
                         return (
                           <div
                             key={absence.id}
-                            className="text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition-opacity"
-                            style={{ backgroundColor: color, color: '#fff' }}
+                            className="text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition-opacity relative overflow-hidden"
+                            style={{
+                              backgroundColor: isHalfDay ? 'transparent' : color,
+                              color: isHalfDay ? '#374151' : '#fff',
+                              border: isHalfDay ? `2px solid ${color}` : 'none'
+                            }}
                             onMouseEnter={(e) => handleAbsenceHover(absence, e)}
                             onMouseLeave={handleAbsenceLeave}
-                            title={`${displayName} - ${absence.absence_type}`}
+                            title={`${displayName} - ${absence.absence_type}${isHalfDay ? ' (Halber Tag)' : ''}`}
                           >
-                            <div className="truncate font-medium">
-                              {displayName}
+                            {isHalfDay && (
+                              <div
+                                className="absolute inset-0 w-1/2"
+                                style={{ backgroundColor: color, opacity: 0.3 }}
+                              />
+                            )}
+                            <div className="truncate font-medium relative z-10">
+                              {displayName}{isHalfDay ? ' (½)' : ''}
                             </div>
                           </div>
                         );
@@ -247,6 +263,11 @@ export default function AbsenceCalendar({ absences = [], absenceTypes = [], init
           <div className="text-gray-400 text-xs">
             {hoveredAbsence.start_date} bis {hoveredAbsence.end_date}
           </div>
+          {hoveredAbsence.is_half_day && (
+            <div className="text-yellow-300 text-xs mt-1 font-medium">
+              ½ Halber Tag
+            </div>
+          )}
         </div>
       )}
     </div>
