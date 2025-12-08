@@ -241,7 +241,7 @@ export default function AbsenceCalendar({
 
                     {/* Absences for this day - Skip weekends (Saturday=6, Sunday=0) */}
                     <div className="space-y-1">
-                      {day.date.getDay() !== 0 && day.date.getDay() !== 6 && day.absences.map((absence) => {
+                      {(day.date.getDay() !== 0 && day.date.getDay() !== 6) && day.absences.map((absence) => {
                         const color = getTypeColor(absence.absence_type);
                         const displayName = absence.employee_fullname || absence.service_account;
                         const isHalfDay = absence.is_half_day;
