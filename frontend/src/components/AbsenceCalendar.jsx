@@ -98,18 +98,24 @@ export default function AbsenceCalendar({
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
 
-    // Check if there's a filtered employee
-    const filteredEmployee = currentFilters.service_account || currentFilters.employee_fullname;
-
     // Create pre-filled data
     const prefilledData = {
       start_date: dateStr,
       end_date: dateStr,
     };
 
-    if (filteredEmployee) {
-      prefilledData.service_account = currentFilters.service_account || '';
-      prefilledData.employee_fullname = currentFilters.employee_fullname || '';
+    // Check if there's a filtered employee
+    if (currentFilters.service_account || currentFilters.employee_fullname) {
+      // If service_account is in filters, use it directly
+      if (currentFilters.service_account) {
+        prefilledData.service_account = currentFilters.service_account;
+        prefilledData.employee_fullname = currentFilters.employee_fullname || '';
+      } else if (currentFilters.employee_fullname && absences.length > 0) {
+        // If only employee_fullname is filtered, get service_account from first absence
+        const firstAbsence = absences[0];
+        prefilledData.service_account = firstAbsence.service_account || '';
+        prefilledData.employee_fullname = currentFilters.employee_fullname;
+      }
     }
 
     onAddClick(prefilledData);
