@@ -428,7 +428,10 @@ export default function AbsenceForm({
               {isEditMode && onDelete && (
                 <button
                   type="button"
-                  onClick={() => onDelete(absence.id)}
+                  onClick={() => {
+                    onDelete(absence.id);
+                    onCancel(); // Close modal after delete
+                  }}
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
                 >
                   {t('button.deleteAbsence')}
