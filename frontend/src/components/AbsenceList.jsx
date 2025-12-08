@@ -3,6 +3,7 @@ import { t } from '../utils/i18n';
 
 export default function AbsenceList({
   absences = [],
+  absenceTypes = [],
   onEdit,
   onDelete,
   onAdd,
@@ -13,6 +14,12 @@ export default function AbsenceList({
   lastModifiedId = null,
 }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  // Get color for absence type
+  const getTypeColor = (typeName) => {
+    const type = absenceTypes.find((t) => t.name === typeName || t.value === typeName);
+    return type?.color || '#3B82F6';
+  };
 
   // Calculate duration in days between two dates (inclusive)
   const calculateDuration = (startDate, endDate) => {
@@ -137,11 +144,16 @@ export default function AbsenceList({
                   {displayName}
                 </td>
                 <td
-                  className="px-6 py-4 text-sm text-gray-900 cursor-pointer hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                  className="px-6 py-4 text-sm cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => onFilter('absence_type', absence.absence_type)}
                   title={`Click to filter by ${absence.absence_type}`}
                 >
-                  {absence.absence_type}
+                  <span
+                    className="px-3 py-1 rounded-full text-white font-medium inline-block"
+                    style={{ backgroundColor: getTypeColor(absence.absence_type) }}
+                  >
+                    {absence.absence_type}
+                  </span>
                 </td>
                 <td
                   className="px-6 py-4 text-sm text-gray-600 cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors"

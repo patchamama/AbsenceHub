@@ -486,6 +486,7 @@ function App() {
                 {/* Absences List Section */}
                 <AbsenceList
                   absences={absences}
+                  absenceTypes={absenceTypes}
                   onAdd={handleAddClick}
                   onEdit={handleEditClick}
                   onDelete={handleDeleteAbsence}
@@ -538,6 +539,9 @@ function App() {
                   absences={absences}
                   absenceTypes={absenceTypes}
                   initialMonth={filters.month || null}
+                  onAddClick={handleAddClick}
+                  onEditClick={handleEditClick}
+                  currentFilters={filters}
                 />
               </>
             )}

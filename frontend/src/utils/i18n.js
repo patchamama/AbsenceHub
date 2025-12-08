@@ -57,7 +57,7 @@ const translations = {
     'list.actions': 'Actions',
     'list.days': 'days',
     'list.day': 'day',
-    'list.halfDay': 'half day',
+    'list.halfDay': '½ day',
 
     // Filters
     'filter.title': 'Filters',
@@ -70,7 +70,7 @@ const translations = {
     'filter.all': 'All',
 
     // Buttons
-    'button.add': 'Add Absence',
+    'button.add': '+ Absence',
     'button.edit': 'Edit',
     'button.delete': 'Delete',
     'button.close': 'Close',
@@ -186,7 +186,7 @@ const translations = {
     'list.actions': 'Aktionen',
     'list.days': 'Tage',
     'list.day': 'Tag',
-    'list.halfDay': 'halber Tag',
+    'list.halfDay': '½ Tag',
 
     // Filters
     'filter.title': 'Filter',
@@ -199,7 +199,7 @@ const translations = {
     'filter.all': 'Alle',
 
     // Buttons
-    'button.add': 'Abwesenheit hinzufügen',
+    'button.add': '+ Abwesenheit',
     'button.edit': 'Bearbeiten',
     'button.delete': 'Löschen',
     'button.close': 'Schließen',

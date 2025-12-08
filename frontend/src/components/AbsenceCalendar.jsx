@@ -5,7 +5,14 @@
 import { useState, useEffect } from 'react';
 import { t } from '../utils/i18n';
 
-export default function AbsenceCalendar({ absences = [], absenceTypes = [], initialMonth = null }) {
+export default function AbsenceCalendar({
+  absences = [],
+  absenceTypes = [],
+  initialMonth = null,
+  onAddClick = null,
+  onEditClick = null,
+  currentFilters = {},
+}) {
   const [currentDate, setCurrentDate] = useState(() => {
     // If initialMonth is provided (format: YYYY-MM), use it
     if (initialMonth) {
@@ -80,6 +87,38 @@ export default function AbsenceCalendar({ absences = [], absenceTypes = [], init
 
   const handleAbsenceLeave = () => {
     setHoveredAbsence(null);
+  };
+
+  // Handle adding absence from calendar
+  const handleAddAbsence = (date) => {
+    if (!onAddClick) return;
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    // Check if there's a filtered employee
+    const filteredEmployee = currentFilters.service_account || currentFilters.employee_fullname;
+
+    // Create pre-filled data
+    const prefilledData = {
+      start_date: dateStr,
+      end_date: dateStr,
+    };
+
+    if (filteredEmployee) {
+      prefilledData.service_account = currentFilters.service_account || '';
+      prefilledData.employee_fullname = currentFilters.employee_fullname || '';
+    }
+
+    onAddClick(prefilledData);
+  };
+
+  // Handle clicking on existing absence
+  const handleAbsenceClick = (absence) => {
+    if (!onEditClick) return;
+    onEditClick(absence);
   };
 
   const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentDate);
@@ -171,14 +210,26 @@ export default function AbsenceCalendar({ absences = [], absenceTypes = [], init
               >
                 {day.date && (
                   <>
-                    <div
-                      className={`text-sm font-medium mb-1 ${
-                        isToday
-                          ? 'text-blue-600 font-bold'
-                          : 'text-gray-700'
-                      }`}
-                    >
-                      {day.dayNumber}
+                    <div className="flex justify-between items-start mb-1">
+                      <div
+                        className={`text-sm font-medium ${
+                          isToday
+                            ? 'text-blue-600 font-bold'
+                            : 'text-gray-700'
+                        }`}
+                      >
+                        {day.dayNumber}
+                      </div>
+                      {onAddClick && (
+                        <button
+                          onClick={() => handleAddAbsence(day.date)}
+                          className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full w-5 h-5 flex items-center justify-center transition-colors text-lg font-bold leading-none"
+                          title="Add absence"
+                          aria-label="Add absence for this day"
+                        >
+                          +
+                        </button>
+                      )}
                     </div>
 
                     {/* Absences for this day */}
@@ -197,6 +248,7 @@ export default function AbsenceCalendar({ absences = [], absenceTypes = [], init
                               color: isHalfDay ? '#374151' : '#fff',
                               border: isHalfDay ? `2px solid ${color}` : 'none'
                             }}
+                            onClick={() => handleAbsenceClick(absence)}
                             onMouseEnter={(e) => handleAbsenceHover(absence, e)}
                             onMouseLeave={handleAbsenceLeave}
                             title={`${displayName} - ${absence.absence_type}${isHalfDay ? ' (Halber Tag)' : ''}`}
