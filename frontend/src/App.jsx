@@ -134,10 +134,12 @@ function App() {
   };
 
   const handleAddClick = (absence) => {
-    // Create a new absence template with service_account and employee_fullname pre-filled
+    // Create a new absence template with pre-filled data
     const absenceTemplate = {
-      service_account: absence.service_account,
+      service_account: absence.service_account || '',
       employee_fullname: absence.employee_fullname || '',
+      start_date: absence.start_date || '',
+      end_date: absence.end_date || '',
     };
     setEditingAbsence(absenceTemplate);
     setShowForm(true);

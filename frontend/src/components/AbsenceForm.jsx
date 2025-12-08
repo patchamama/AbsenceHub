@@ -24,16 +24,26 @@ export default function AbsenceForm({
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
 
-  // Pre-fill form if editing
+  // Pre-fill form if editing or adding with pre-filled data
   useEffect(() => {
     if (absence) {
       setFormData({
-        service_account: absence.service_account,
+        service_account: absence.service_account || '',
         employee_fullname: absence.employee_fullname || '',
-        absence_type: absence.absence_type,
-        start_date: absence.start_date,
-        end_date: absence.end_date,
+        absence_type: absence.absence_type || '',
+        start_date: absence.start_date || '',
+        end_date: absence.end_date || '',
         is_half_day: absence.is_half_day || false,
+      });
+    } else {
+      // Reset form when absence is null (creating new without pre-fill)
+      setFormData({
+        service_account: '',
+        employee_fullname: '',
+        absence_type: '',
+        start_date: '',
+        end_date: '',
+        is_half_day: false,
       });
     }
   }, [absence]);
