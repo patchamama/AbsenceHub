@@ -6,6 +6,7 @@ import { t } from '../utils/i18n';
 export default function AbsenceForm({
   absence = null,
   absenceTypes = [],
+  absences = [],
   onSubmit,
   onCancel,
   loading = false,
@@ -23,6 +24,17 @@ export default function AbsenceForm({
   const [errors, setErrors] = useState({});
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
+
+  // Get unique employees from absences
+  const uniqueEmployees = absences.reduce((acc, absence) => {
+    if (absence.service_account && !acc.find(emp => emp.service_account === absence.service_account)) {
+      acc.push({
+        service_account: absence.service_account,
+        employee_fullname: absence.employee_fullname || ''
+      });
+    }
+    return acc;
+  }, []).sort((a, b) => a.service_account.localeCompare(b.service_account));
 
   // Pre-fill form if editing or adding with pre-filled data
   useEffect(() => {
@@ -103,6 +115,15 @@ export default function AbsenceForm({
   const handleChange = (e) => {
     const { name, value } = e.target;
     const newFormData = { ...formData, [name]: value };
+
+    // Auto-fill employee_fullname when service_account is selected from list
+    if (name === 'service_account') {
+      const selectedEmployee = uniqueEmployees.find(emp => emp.service_account === value);
+      if (selectedEmployee) {
+        newFormData.employee_fullname = selectedEmployee.employee_fullname;
+      }
+    }
+
     setFormData(newFormData);
 
     // Clear error for this field when user starts typing
@@ -277,19 +298,37 @@ export default function AbsenceForm({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Service Account */}
-          <FormField
-            label={t('field.serviceAccount')}
-            name="service_account"
-            type="text"
-            value={formData.service_account}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={errors.service_account}
-            placeholder="s.firstname.lastname"
-            disabled={isEditMode}
-            required={true}
-          />
+          {/* Service Account with Autocomplete */}
+          <div className="space-y-2">
+            <label htmlFor="service_account" className="block text-sm font-medium text-gray-700">
+              {t('field.serviceAccount')} <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="service_account"
+              name="service_account"
+              type="text"
+              list="service-accounts-list"
+              value={formData.service_account}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              placeholder="s.firstname.lastname"
+              disabled={isEditMode}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.service_account ? 'border-red-500' : 'border-gray-300'
+              } ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              required
+            />
+            <datalist id="service-accounts-list">
+              {uniqueEmployees.map((employee) => (
+                <option key={employee.service_account} value={employee.service_account}>
+                  {employee.employee_fullname && `${employee.employee_fullname}`}
+                </option>
+              ))}
+            </datalist>
+            {errors.service_account && (
+              <p className="text-sm text-red-600">{errors.service_account}</p>
+            )}
+          </div>
 
           {/* Employee Full Name */}
           <FormField

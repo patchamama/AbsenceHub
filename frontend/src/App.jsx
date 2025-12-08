@@ -547,6 +547,7 @@ function App() {
           <AbsenceForm
             absence={editingAbsence}
             absenceTypes={absenceTypes}
+            absences={absences}
             onSubmit={handleFormSubmit}
             onCancel={handleFormCancel}
             loading={formLoading}

@@ -23,6 +23,7 @@ export default function AbsenceCalendar({
   });
   const [hoveredAbsence, setHoveredAbsence] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [weekStartKey, setWeekStartKey] = useState(0); // Force re-render on week start change
 
   // Update currentDate when initialMonth changes
   useEffect(() => {
@@ -31,6 +32,16 @@ export default function AbsenceCalendar({
       setCurrentDate(new Date(year, month - 1, 1));
     }
   }, [initialMonth]);
+
+  // Listen for calendar week start changes
+  useEffect(() => {
+    const handleWeekStartChange = () => {
+      setWeekStartKey(prev => prev + 1); // Force re-render
+    };
+
+    window.addEventListener('calendarWeekStartChange', handleWeekStartChange);
+    return () => window.removeEventListener('calendarWeekStartChange', handleWeekStartChange);
+  }, []);
 
   // Get color for absence type
   const getTypeColor = (typeName) => {
@@ -51,6 +62,12 @@ export default function AbsenceCalendar({
     setCurrentDate(new Date());
   };
 
+  // Get calendar week start preference from localStorage
+  const getWeekStartsOn = () => {
+    const saved = localStorage.getItem('calendarWeekStart');
+    return saved === 'sunday' ? 0 : 1; // 0 = Sunday, 1 = Monday
+  };
+
   // Get days in month
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -58,7 +75,11 @@ export default function AbsenceCalendar({
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+    const weekStartsOn = getWeekStartsOn();
+
+    // Adjust day of week based on week start preference
+    let startingDayOfWeek = firstDay.getDay() - weekStartsOn;
+    if (startingDayOfWeek < 0) startingDayOfWeek += 7;
 
     return { daysInMonth, startingDayOfWeek, year, month };
   };
@@ -151,8 +172,12 @@ export default function AbsenceCalendar({
   ];
   const monthYearDisplay = `${monthNames[month]} ${year}`;
 
-  // Day names
-  const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  // Day names - Dynamic based on week start preference
+  const weekStartsOn = getWeekStartsOn();
+  const allDayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const dayNames = weekStartsOn === 1
+    ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']  // Start with Monday
+    : ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']; // Start with Sunday
 
   return (
     <div className="bg-white rounded-lg shadow p-6">

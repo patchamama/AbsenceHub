@@ -21,10 +21,21 @@ export default function AbsenceTypeSettings() {
   const [formLoading, setFormLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showInactive, setShowInactive] = useState(false);
+  const [calendarWeekStart, setCalendarWeekStart] = useState(() => {
+    return localStorage.getItem('calendarWeekStart') || 'monday';
+  });
 
   useEffect(() => {
     fetchAbsenceTypes();
   }, [showInactive]);
+
+  // Handle calendar week start change
+  const handleWeekStartChange = (value) => {
+    setCalendarWeekStart(value);
+    localStorage.setItem('calendarWeekStart', value);
+    // Trigger a storage event so other components can react
+    window.dispatchEvent(new Event('calendarWeekStartChange'));
+  };
 
   const fetchAbsenceTypes = async () => {
     try {
@@ -138,6 +149,40 @@ export default function AbsenceTypeSettings() {
           {successMessage}
         </div>
       )}
+
+      {/* Calendar Week Start Setting */}
+      <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">Kalendereinstellungen</h3>
+        <div className="flex items-center gap-4">
+          <label className="text-sm text-gray-700 font-medium">
+            Woche beginnt am:
+          </label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="weekStart"
+                value="monday"
+                checked={calendarWeekStart === 'monday'}
+                onChange={(e) => handleWeekStartChange(e.target.value)}
+                className="w-4 h-4 text-blue-600 border-gray-300"
+              />
+              <span className="text-sm text-gray-700">Montag</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="weekStart"
+                value="sunday"
+                checked={calendarWeekStart === 'sunday'}
+                onChange={(e) => handleWeekStartChange(e.target.value)}
+                className="w-4 h-4 text-blue-600 border-gray-300"
+              />
+              <span className="text-sm text-gray-700">Sonntag</span>
+            </label>
+          </div>
+        </div>
+      </div>
 
       {/* Actions */}
       <div className="mb-6 flex justify-between items-center">
