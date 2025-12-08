@@ -125,7 +125,7 @@ backend/
 
 ### Health Check
 ```
-GET /health
+GET /api/health
 ```
 
 ### Absences (CRUD)

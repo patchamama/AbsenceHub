@@ -899,10 +899,43 @@ class Installer:
                 Logger.info("Creating database...")
                 self.create_database()
 
-            # Run migrations
-            Logger.info("Running database migrations...")
+            # Check if tables already exist
+            Logger.info("Checking for existing tables...")
+            tables_exist = self.check_tables_exist(backend_dir)
+
+            if tables_exist:
+                Logger.warning("Database tables already exist!")
+                Logger.info("Existing tables: employee_absence, audit_log")
+
+                recreate = Logger.prompt_bool(
+                    "Do you want to drop existing tables and create new ones?",
+                    default=False
+                )
+
+                if recreate:
+                    # Backup existing data
+                    backup_file = self.backup_database_data(backend_dir)
+                    if backup_file:
+                        Logger.success(f"Data backed up to: {backup_file}")
+
+                    # Drop existing tables
+                    Logger.info("Dropping existing tables...")
+                    self.drop_tables(backend_dir)
+                    Logger.success("Tables dropped")
+                else:
+                    Logger.info("Keeping existing tables. Skipping table creation.")
+                    return
+
+            # Create all tables using db.create_all()
+            Logger.info("Creating database tables...")
             result = subprocess.run(
-                [sys.executable, 'run.py', 'db', 'upgrade'],
+                [sys.executable, '-c',
+                 'from app import create_app, db; '
+                 'from app.models.absence import EmployeeAbsence; '
+                 'from app.models.audit_log import AuditLog; '
+                 'app = create_app(); '
+                 'with app.app_context(): db.create_all(); '
+                 'print("Tables created successfully")'],
                 cwd=str(backend_dir),
                 capture_output=True,
                 text=True,
@@ -910,25 +943,144 @@ class Installer:
             )
 
             if result.returncode == 0:
-                Logger.success("Database schema created")
+                Logger.success("Database tables created (EmployeeAbsence, AuditLog)")
+                if result.stdout:
+                    Logger.info(result.stdout.strip())
             else:
-                # Try alternative migration method
-                Logger.info("Attempting alternative migration method...")
-                result = subprocess.run(
-                    [sys.executable, '-c', 'from app import create_app, db; app = create_app(); db.create_all()'],
-                    cwd=str(backend_dir),
-                    capture_output=True,
-                    text=True,
-                    timeout=30
-                )
-
-                if result.returncode == 0:
-                    Logger.success("Database schema created (alternative method)")
-                else:
-                    Logger.warning("Database migration may need manual setup")
+                Logger.warning(f"Database table creation may have issues: {result.stderr}")
 
         except Exception as e:
             Logger.warning(f"Database setup encountered an issue: {str(e)}")
+
+
+    def check_tables_exist(self, backend_dir):
+        """Check if database tables already exist"""
+        try:
+            result = subprocess.run(
+                [sys.executable, '-c',
+                 'from app import create_app, db; '
+                 'app = create_app(); '
+                 'with app.app_context(): '
+                 '    from sqlalchemy import inspect; '
+                 '    inspector = inspect(db.engine); '
+                 '    tables = inspector.get_table_names(); '
+                 '    print("employee_absence" in tables or "audit_log" in tables)'],
+                cwd=str(backend_dir),
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode == 0:
+                return 'True' in result.stdout
+            return False
+        except Exception:
+            return False
+
+    def backup_database_data(self, backend_dir):
+        """Backup database data to JSON file"""
+        try:
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_file = self.project_dir / f'database_backup_{timestamp}.json'
+
+            Logger.info("Backing up database data...")
+
+            backup_script = f"""
+import json
+from app import create_app, db
+from app.models.absence import EmployeeAbsence
+from app.models.audit_log import AuditLog
+
+app = create_app()
+
+with app.app_context():
+    # Backup absences
+    absences = EmployeeAbsence.query.all()
+    absences_data = [{{
+        'id': a.id,
+        'service_account': a.service_account,
+        'employee_fullname': a.employee_fullname,
+        'absence_type': a.absence_type,
+        'start_date': str(a.start_date),
+        'end_date': str(a.end_date),
+        'is_half_day': a.is_half_day,
+        'created_at': str(a.created_at) if a.created_at else None,
+        'updated_at': str(a.updated_at) if a.updated_at else None
+    }} for a in absences]
+
+    # Backup audit logs
+    audit_logs = AuditLog.query.all()
+    audit_data = [{{
+        'id': log.id,
+        'table_name': log.table_name,
+        'entity_id': log.entity_id,
+        'action': log.action,
+        'old_values': log.old_values,
+        'new_values': log.new_values,
+        'timestamp': str(log.timestamp) if log.timestamp else None,
+        'description': log.description
+    }} for log in audit_logs]
+
+    # Save to JSON
+    backup = {{
+        'backup_timestamp': '{timestamp}',
+        'absences': absences_data,
+        'audit_logs': audit_data,
+        'total_absences': len(absences_data),
+        'total_audit_logs': len(audit_data)
+    }}
+
+    with open(str('{backup_file}'), 'w', encoding='utf-8') as f:
+        json.dump(backup, f, indent=2, ensure_ascii=False)
+
+    print(f'Backup completed: {{len(absences_data)}} absences, {{len(audit_data)}} audit logs')
+"""
+
+            result = subprocess.run(
+                [sys.executable, '-c', backup_script],
+                cwd=str(backend_dir),
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0 and backup_file.exists():
+                Logger.info(result.stdout.strip())
+                return backup_file
+            else:
+                Logger.warning(f"Backup may have failed: {result.stderr}")
+                return None
+
+        except Exception as e:
+            Logger.warning(f"Backup failed: {str(e)}")
+            return None
+
+    def drop_tables(self, backend_dir):
+        """Drop all database tables"""
+        try:
+            result = subprocess.run(
+                [sys.executable, '-c',
+                 'from app import create_app, db; '
+                 'from app.models.absence import EmployeeAbsence; '
+                 'from app.models.audit_log import AuditLog; '
+                 'app = create_app(); '
+                 'with app.app_context(): db.drop_all(); '
+                 'print("All tables dropped")'],
+                cwd=str(backend_dir),
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0:
+                return True
+            else:
+                Logger.warning(f"Drop tables may have failed: {result.stderr}")
+                return False
+        except Exception as e:
+            Logger.warning(f"Drop tables failed: {str(e)}")
+            return False
 
     def create_database(self):
         """Create database on external server"""

@@ -9,6 +9,7 @@ export default function AbsenceForm({
   onSubmit,
   onCancel,
   loading = false,
+  overlapError = null,
 }) {
   const [formData, setFormData] = useState({
     service_account: '',
@@ -36,6 +37,17 @@ export default function AbsenceForm({
       });
     }
   }, [absence]);
+
+  // Mark date fields as error when overlap error occurs
+  useEffect(() => {
+    if (overlapError && overlapError.startsWith('OVERLAP_ERROR|')) {
+      setErrors(prev => ({
+        ...prev,
+        start_date: ' ', // Non-empty to trigger error styling
+        end_date: ' ',   // Non-empty to trigger error styling
+      }));
+    }
+  }, [overlapError]);
 
   // Focus trap and Escape key handler for modal
   useEffect(() => {

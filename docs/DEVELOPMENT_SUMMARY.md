@@ -29,7 +29,7 @@ Commits: 8 commits principales
 ✅ DELETE /api/absences/<id>        (Eliminar ausencia)
 ✅ GET    /api/absence-types        (Obtener tipos disponibles)
 ✅ GET    /api/statistics           (Estadísticas generales)
-✅ GET    /health                   (Health check)
+✅ GET    /api/health                   (Health check)
 ```
 
 **Validaciones Implementadas**

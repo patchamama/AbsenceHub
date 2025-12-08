@@ -134,7 +134,7 @@ Se completó exitosamente la implementación de **7 características principales
 
 ### Servidores en Ejecución
 
-- ✅ **Backend**: http://localhost:5001/api
+- ✅ **Backend**: http://localhost:5000/api
 - ✅ **Frontend**: http://localhost:5173/
 - ✅ **Base de Datos**: PostgreSQL en puerto 5433
 
@@ -184,11 +184,11 @@ Se completó exitosamente la implementación de **7 características principales
 
 ```bash
 # Terminal 1 - Backend
-cd /mnt/c/Users/Armando.Cabrera/work/AbsenceHub/backend
+cd AbsenceHub/backend
 python run.py
 
 # Terminal 2 - Frontend
-cd /mnt/c/Users/Armando.Cabrera/work/AbsenceHub/frontend
+cd AbsenceHub/frontend
 npm run dev
 
 # Abrir navegador en:
@@ -425,7 +425,7 @@ GET    /api/absences?year=2025                 # Filtro año
 - **Opción 1**: Usar la UI (⚙️ Einstellungen → Bearbeiten)
 - **Opción 2**: API:
   ```bash
-  curl -X PUT http://localhost:5001/api/absence-types/1 \
+  curl -X PUT http://localhost:5000/api/absence-types/1 \
     -H "Content-Type: application/json" \
     -d '{"color": "#FF5733"}'
   ```

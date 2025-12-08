@@ -18,6 +18,12 @@ const translations = {
     // Absence Form
     'form.createAbsence': 'Create New Absence',
     'form.editAbsence': 'Edit Absence',
+    'form.serviceAccount': 'Service Account',
+    'form.employeeFullname': 'Employee Name',
+    'form.absenceType': 'Absence Type',
+    'form.startDate': 'Start Date',
+    'form.endDate': 'End Date',
+    'form.halfDay': 'Half Day',
     'field.serviceAccount': 'Service Account',
     'field.employeeFullname': 'Employee Name',
     'field.absenceType': 'Absence Type',
@@ -92,12 +98,38 @@ const translations = {
     'error.dateFormatInvalid': 'Invalid date format',
     'error.overlapError':
       'This absence overlaps with an existing absence of the same type',
+    'error.overlapTitle': 'Date Overlap Detected',
+    'error.overlapMessage': 'The selected date range overlaps with an existing absence.',
+    'error.existingAbsence': 'Existing Absence',
+    'error.yourDates': 'Your Selected Dates',
+    'error.overlapAction': 'Please modify or delete the existing absence before creating this new one.',
 
     // Statistics
     'stats.title': 'Statistics',
     'stats.totalAbsences': 'Total Absences',
     'stats.uniqueEmployees': 'Unique Employees',
     'stats.byType': 'Absences by Type',
+
+    // Audit Logs
+    'audit.title': 'Audit Log',
+    'audit.filter.all': 'All',
+    'audit.filter.created': 'Created',
+    'audit.filter.updated': 'Updated',
+    'audit.filter.deleted': 'Deleted',
+    'audit.action.create': 'Created',
+    'audit.action.update': 'Updated',
+    'audit.action.delete': 'Deleted',
+    'audit.showing': 'Showing {returned} of {total} records',
+    'audit.loading': 'Loading records...',
+    'audit.error': 'Failed to load audit logs. Please try again.',
+    'audit.empty': 'No audit records found.',
+    'audit.newValues': 'New Values',
+    'audit.oldValues': 'Old Values',
+    'audit.deletedValues': 'Deleted Values',
+    'audit.button.deleteLogs': 'Delete Logs',
+    'audit.confirmDelete': 'Are you sure you want to delete all {filter} audit logs?',
+    'audit.deleteSuccess': 'Audit logs deleted successfully',
+    'audit.deleteError': 'Error deleting audit logs. Please try again.',
   },
   de: {
     // Header & Navigation
@@ -114,6 +146,12 @@ const translations = {
     // Absence Form
     'form.createAbsence': 'Neue Abwesenheit erstellen',
     'form.editAbsence': 'Abwesenheit bearbeiten',
+    'form.serviceAccount': 'Service-Konto',
+    'form.employeeFullname': 'Name des Mitarbeiters',
+    'form.absenceType': 'Abwesenheitstyp',
+    'form.startDate': 'Startdatum',
+    'form.endDate': 'Enddatum',
+    'form.halfDay': 'Halber Tag',
     'field.serviceAccount': 'Service-Konto',
     'field.employeeFullname': 'Name des Mitarbeiters',
     'field.absenceType': 'Abwesenheitstyp',
@@ -192,12 +230,38 @@ const translations = {
     'error.dateFormatInvalid': 'Ungültiges Datumsformat',
     'error.overlapError':
       'Diese Abwesenheit überlappt sich mit einer bestehenden Abwesenheit desselben Typs',
+    'error.overlapTitle': 'Datumsüberschneidung erkannt',
+    'error.overlapMessage': 'Der ausgewählte Zeitraum überlappt sich mit einer bestehenden Abwesenheit.',
+    'error.existingAbsence': 'Bestehende Abwesenheit',
+    'error.yourDates': 'Ihre ausgewählten Daten',
+    'error.overlapAction': 'Bitte ändern oder löschen Sie die bestehende Abwesenheit, bevor Sie diese neue erstellen.',
 
     // Statistics
     'stats.title': 'Statistiken',
     'stats.totalAbsences': 'Gesamtabwesenheiten',
     'stats.uniqueEmployees': 'Eindeutige Mitarbeiter',
     'stats.byType': 'Abwesenheiten nach Typ',
+
+    // Audit Logs
+    'audit.title': 'Auditprotokoll',
+    'audit.filter.all': 'Alle',
+    'audit.filter.created': 'Erstellt',
+    'audit.filter.updated': 'Aktualisiert',
+    'audit.filter.deleted': 'Gelöscht',
+    'audit.action.create': 'Erstellt',
+    'audit.action.update': 'Aktualisiert',
+    'audit.action.delete': 'Gelöscht',
+    'audit.showing': '{returned} von {total} Einträgen angezeigt',
+    'audit.loading': 'Einträge werden geladen...',
+    'audit.error': 'Fehler beim Laden der Auditprotokolle. Bitte versuchen Sie es erneut.',
+    'audit.empty': 'Keine Auditeinträge gefunden.',
+    'audit.newValues': 'Neue Werte',
+    'audit.oldValues': 'Alte Werte',
+    'audit.deletedValues': 'Gelöschte Werte',
+    'audit.button.deleteLogs': 'Logs löschen',
+    'audit.confirmDelete': 'Sind Sie sicher, dass Sie alle {filter} Auditprotokolle löschen möchten?',
+    'audit.deleteSuccess': 'Auditprotokolle erfolgreich gelöscht',
+    'audit.deleteError': 'Fehler beim Löschen der Auditprotokolle. Bitte versuchen Sie es erneut.',
   },
 };
 
@@ -213,9 +277,15 @@ export const setLanguage = (lang) => {
 
 export const getLanguage = () => currentLanguage;
 
-export const t = (key, defaultValue = key) => {
-  const translation = translations[currentLanguage]?.[key];
-  return translation || translations.en[key] || defaultValue;
+export const t = (key, defaultValue = key, params = {}) => {
+  let translation = translations[currentLanguage]?.[key] || translations.en[key] || defaultValue;
+
+  // Replace parameters like {returned} and {total}
+  Object.keys(params).forEach(param => {
+    translation = translation.replace(new RegExp(`\\{${param}\\}`, 'g'), params[param]);
+  });
+
+  return translation;
 };
 
 export const getAvailableLanguages = () => Object.keys(translations);

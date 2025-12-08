@@ -13,10 +13,12 @@ import AbsenceList from './components/AbsenceList';
 import AbsenceFilters from './components/AbsenceFilters';
 import AbsenceTypeSettings from './components/AbsenceTypeSettings';
 import AbsenceCalendar from './components/AbsenceCalendar';
+import AuditLogViewer from './components/AuditLogViewer';
+import OverlapErrorModal from './components/OverlapErrorModal';
 import './App.css';
 
 function App() {
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'calendar', 'settings'
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'calendar', 'settings', 'audit'
   const [absences, setAbsences] = useState([]);
   const [absenceTypes, setAbsenceTypes] = useState([]);
   const [statistics, setStatistics] = useState(null);
@@ -29,6 +31,7 @@ function App() {
   const [filters, setFilters] = useState({});
   const [formLoading, setFormLoading] = useState(false);
   const [lastModifiedId, setLastModifiedId] = useState(null);
+  const [overlapError, setOverlapError] = useState(null);
 
   // Fetch initial data and sync HTML lang attribute
   useEffect(() => {
@@ -37,15 +40,20 @@ function App() {
     document.documentElement.lang = getLanguage();
   }, []);
 
-  // Fetch absences when filters change
+  // Fetch absences and statistics when filters change
   useEffect(() => {
     const fetchFiltered = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const absencesRes = await getAllAbsences(filters);
+        const [absencesRes, statsRes] = await Promise.all([
+          getAllAbsences(filters),
+          getStatistics(filters),  // Pass filters to statistics
+        ]);
+
         setAbsences(absencesRes.data?.data || []);
+        setStatistics(statsRes.data?.data || null);
       } catch (err) {
         setError(t('message.loadingError'));
         console.error('Error fetching data:', err);
@@ -166,7 +174,16 @@ function App() {
         setLastModifiedId(null);
       }, 5000);
     } catch (err) {
-      setError(err.response?.data?.error || t('message.savingError'));
+      const errorMessage = err.response?.data?.error || t('message.savingError');
+
+      // Check if it's an overlap error
+      if (errorMessage.startsWith('OVERLAP_ERROR|')) {
+        setOverlapError(errorMessage);
+        // Don't close the form, keep it open so user can modify dates
+      } else {
+        setError(errorMessage);
+      }
+
       console.error('Error saving absence:', err);
     } finally {
       setFormLoading(false);
@@ -204,6 +221,31 @@ function App() {
   const handleCellFilter = (filterType, filterValue) => {
     // Apply filter for the specific cell clicked
     setFilters({ [filterType]: filterValue });
+  };
+
+  const handleStatisticClick = (absenceType) => {
+    // Apply filter when clicking on a statistic by type
+    if (absenceType) {
+      setFilters({ absence_type: absenceType });
+    }
+  };
+
+  const handleDateClick = (dateString, serviceAccount) => {
+    // Navigate to calendar view and set filters for the clicked date
+    if (dateString && serviceAccount) {
+      // Extract year and month from date (YYYY-MM-DD format)
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const monthFilter = `${year}-${month}`;
+
+      // Set filters and switch to calendar view
+      setFilters({
+        service_account: serviceAccount,
+        month: monthFilter,
+      });
+      setCurrentView('calendar');
+    }
   };
 
   return (
@@ -264,6 +306,16 @@ function App() {
               }`}
             >
               ⚙️ Einstellungen
+            </button>
+            <button
+              onClick={() => setCurrentView('audit')}
+              className={`px-4 py-2 rounded-md transition-colors ${
+                currentView === 'audit'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              📋 Audit Logs
             </button>
           </nav>
         </div>
@@ -379,7 +431,12 @@ function App() {
                       </h3>
                       <ul className="mt-2 space-y-1">
                         {Object.entries(statistics.by_type || {}).map(([type, days]) => (
-                          <li key={type} className="text-sm text-gray-600">
+                          <li
+                            key={type}
+                            onClick={() => handleStatisticClick(type)}
+                            className="text-sm text-gray-600 cursor-pointer hover:bg-blue-50 hover:text-blue-700 px-2 py-1 rounded transition-colors"
+                            title={`Click to filter by ${t(`absence.${type}`)}`}
+                          >
                             {t(`absence.${type}`)}:{' '}
                             <span className="font-bold">{days} {days === 1 ? 'day' : 'days'}</span>
                           </li>
@@ -397,12 +454,20 @@ function App() {
                     onSubmit={handleFormSubmit}
                     onCancel={handleFormCancel}
                     loading={formLoading}
+                    overlapError={overlapError}
                   />
                 )}
+
+                {/* Overlap Error Modal */}
+                <OverlapErrorModal
+                  error={overlapError}
+                  onClose={() => setOverlapError(null)}
+                />
 
                 {/* Filters Section */}
                 <AbsenceFilters
                   absenceTypes={absenceTypes}
+                  currentFilters={filters}
                   onFilter={handleApplyFilters}
                   onClear={handleClearFilters}
                 />
@@ -425,6 +490,7 @@ function App() {
                   onEdit={handleEditClick}
                   onDelete={handleDeleteAbsence}
                   onFilter={handleCellFilter}
+                  onDateClick={handleDateClick}
                   loading={loading}
                   error={error}
                   lastModifiedId={lastModifiedId}
@@ -471,6 +537,7 @@ function App() {
                 <AbsenceCalendar
                   absences={absences}
                   absenceTypes={absenceTypes}
+                  initialMonth={filters.month || null}
                 />
               </>
             )}
@@ -478,6 +545,11 @@ function App() {
             {/* Settings View */}
             {currentView === 'settings' && (
               <AbsenceTypeSettings />
+            )}
+
+            {/* Audit Logs View */}
+            {currentView === 'audit' && (
+              <AuditLogViewer />
             )}
           </>
         )}

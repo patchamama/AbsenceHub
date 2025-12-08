@@ -4,14 +4,14 @@
 
 ### Backend
 ```bash
-cd /mnt/c/Users/Armando.Cabrera/work/AbsenceHub/backend
+cd AbsenceHub/backend
 python run.py
 ```
-**URL**: http://localhost:5001/api
+**URL**: http://localhost:5000/api
 
 ### Frontend
 ```bash
-cd /mnt/c/Users/Armando.Cabrera/work/AbsenceHub/frontend
+cd AbsenceHub/frontend
 npm run dev
 ```
 **URL**: http://localhost:5173/
@@ -332,21 +332,21 @@ npm run dev
 
 #### 5.1 Listar Tipos Activos
 ```bash
-curl http://localhost:5001/api/absence-types
+curl http://localhost:5000/api/absence-types
 ```
 
 **Resultado esperado**: JSON con tipos activos
 
 #### 5.2 Listar Todos los Tipos
 ```bash
-curl "http://localhost:5001/api/absence-types?active_only=false"
+curl "http://localhost:5000/api/absence-types?active_only=false"
 ```
 
 **Resultado esperado**: JSON con todos los tipos (activos e inactivos)
 
 #### 5.3 Crear Tipo
 ```bash
-curl -X POST http://localhost:5001/api/absence-types \
+curl -X POST http://localhost:5000/api/absence-types \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Fortbildung",
@@ -361,21 +361,21 @@ curl -X POST http://localhost:5001/api/absence-types \
 
 #### 5.4 Buscar por Nombre (LIKE)
 ```bash
-curl "http://localhost:5001/api/absences?employee_fullname=schmidt"
+curl "http://localhost:5000/api/absences?employee_fullname=schmidt"
 ```
 
 **Resultado esperado**: Solo ausencias con "schmidt" en el nombre
 
 #### 5.5 Filtrar por Mes
 ```bash
-curl "http://localhost:5001/api/absences?month=2025-01"
+curl "http://localhost:5000/api/absences?month=2025-01"
 ```
 
 **Resultado esperado**: Solo ausencias en enero 2025
 
 #### 5.6 Filtrar por Año
 ```bash
-curl "http://localhost:5001/api/absences?year=2025"
+curl "http://localhost:5000/api/absences?year=2025"
 ```
 
 **Resultado esperado**: Solo ausencias en 2025

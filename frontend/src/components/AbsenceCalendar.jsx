@@ -5,10 +5,25 @@
 import { useState, useEffect } from 'react';
 import { t } from '../utils/i18n';
 
-export default function AbsenceCalendar({ absences = [], absenceTypes = [] }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+export default function AbsenceCalendar({ absences = [], absenceTypes = [], initialMonth = null }) {
+  const [currentDate, setCurrentDate] = useState(() => {
+    // If initialMonth is provided (format: YYYY-MM), use it
+    if (initialMonth) {
+      const [year, month] = initialMonth.split('-').map(Number);
+      return new Date(year, month - 1, 1);
+    }
+    return new Date();
+  });
   const [hoveredAbsence, setHoveredAbsence] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  // Update currentDate when initialMonth changes
+  useEffect(() => {
+    if (initialMonth) {
+      const [year, month] = initialMonth.split('-').map(Number);
+      setCurrentDate(new Date(year, month - 1, 1));
+    }
+  }, [initialMonth]);
 
   // Get color for absence type
   const getTypeColor = (typeName) => {

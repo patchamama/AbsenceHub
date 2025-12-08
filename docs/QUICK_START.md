@@ -9,21 +9,21 @@ Guía rápida para arrancar la aplicación en minutos.
 ### 1️⃣ Iniciar Backend
 
 ```bash
-cd /mnt/c/Users/Armando.Cabrera/work/AbsenceHub/backend
+cd AbsenceHub/backend
 python run.py
 ```
 
 **Salida esperada**:
 ```
 ⚠  Port 5000 is in use. Using port 5001 instead.
-✓ Flask backend running on http://localhost:5001
-✓ API endpoints available at http://localhost:5001/api
+✓ Flask backend running on http://localhost:5000
+✓ API endpoints available at http://localhost:5000/api
 ```
 
 ### 2️⃣ Iniciar Frontend
 
 ```bash
-cd /mnt/c/Users/Armando.Cabrera/work/AbsenceHub/frontend
+cd AbsenceHub/frontend
 npm run dev
 ```
 
@@ -53,8 +53,8 @@ http://localhost:5173/
 | Recurso | URL |
 |---------|-----|
 | Frontend | http://localhost:5173/ |
-| Backend API | http://localhost:5001/api |
-| Health Check | http://localhost:5001/health |
+| Backend API | http://localhost:5000/api |
+| Health Check | http://localhost:5000/api/health |
 
 ---
 

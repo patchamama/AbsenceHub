@@ -575,7 +575,7 @@ python run.py
 cd frontend
 npm run dev
 # Puerto: 5173
-# Proxy: http://localhost:5001/api
+# Proxy: http://localhost:5000/api
 ```
 
 ### Build para Producción
@@ -825,7 +825,7 @@ FLASK_DEBUG=1
 SECRET_KEY=your-secret-key
 
 # Frontend (vite.config.js)
-VITE_API_URL=http://localhost:5001/api
+VITE_API_URL=http://localhost:5000/api
 ```
 
 ### C. Stack Tecnológico Completo

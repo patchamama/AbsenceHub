@@ -2,7 +2,9 @@
 # IMPORTANT: Import db_utils first to configure environment for database
 from app import db_utils  # noqa: F401
 
-from flask import Flask, jsonify
+import os
+from pathlib import Path
+from flask import Flask, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -24,7 +26,10 @@ def create_app(config_name=None):
     Returns:
         Flask: Configured application instance
     """
-    app = Flask(__name__)
+    # Determine static folder path (frontend build)
+    static_folder = Path(__file__).parent.parent / 'static'
+
+    app = Flask(__name__, static_folder=str(static_folder), static_url_path='')
 
     # Load configuration
     config = get_config(config_name)
@@ -41,10 +46,38 @@ def create_app(config_name=None):
     # Register blueprints
     from app.routes import absence_bp, health_bp
     from app.routes.absence_type_routes import absence_type_bp
+    from app.routes.audit_routes import audit_bp
 
     app.register_blueprint(absence_bp, url_prefix="/api")
     app.register_blueprint(absence_type_bp, url_prefix="/api")
-    app.register_blueprint(health_bp)
+    app.register_blueprint(audit_bp, url_prefix="/api")
+    app.register_blueprint(health_bp, url_prefix="/api")
+
+    # Serve frontend static files (SPA support)
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_spa(path):
+        """Serve the React SPA for all non-API routes."""
+        # Don't interfere with API routes
+        if path.startswith('api/'):
+            return jsonify({"success": False, "error": "API endpoint not found"}), 404
+
+        # Serve static files if they exist
+        if path and static_folder.exists():
+            file_path = static_folder / path
+            if file_path.exists() and file_path.is_file():
+                return send_from_directory(str(static_folder), path)
+
+        # Otherwise, serve index.html (for client-side routing)
+        index_path = static_folder / 'index.html'
+        if index_path.exists():
+            return send_from_directory(str(static_folder), 'index.html')
+
+        # If no static files exist, return helpful message
+        return jsonify({
+            "message": "Frontend not built yet. Run 'npm run build' in frontend directory.",
+            "instructions": "1. cd frontend\n2. npm run build\n3. The build will be automatically copied to backend/static"
+        }), 200
 
     # Error handlers
     register_error_handlers(app)
@@ -53,10 +86,12 @@ def create_app(config_name=None):
     @app.shell_context_processor
     def make_shell_context():
         from app.models.absence import EmployeeAbsence
+        from app.models.audit_log import AuditLog
 
         return {
             "db": db,
             "EmployeeAbsence": EmployeeAbsence,
+            "AuditLog": AuditLog,
         }
 
     # CLI commands

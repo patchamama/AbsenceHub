@@ -128,8 +128,8 @@ When you start the backend, you'll see:
 Or if port 5000 is occupied:
 ```bash
 ⚠  Port 5000 is in use. Using port 5001 instead.
-✓ Flask backend running on http://localhost:5001
-✓ API endpoints available at http://localhost:5001/api
+✓ Flask backend running on http://localhost:5000
+✓ API endpoints available at http://localhost:5000/api
 ```
 
 #### Frontend Backend Discovery

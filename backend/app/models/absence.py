@@ -41,13 +41,31 @@ class EmployeeAbsence(db.Model):
         }
 
     def calculate_days(self):
-        """Calculate the number of days for this absence."""
+        """
+        Calculate the number of business days (excluding weekends) for this absence.
+
+        Returns:
+            float: Number of business days (0.5 for half-day, excludes Sat/Sun)
+        """
         if self.is_half_day:
             return 0.5
-        if self.start_date and self.end_date:
-            delta = self.end_date - self.start_date
-            return delta.days + 1  # +1 because both days are inclusive
-        return 0
+
+        if not self.start_date or not self.end_date:
+            return 0
+
+        # Count only business days (Monday=0 to Friday=4, exclude Saturday=5 and Sunday=6)
+        from datetime import timedelta
+
+        current_date = self.start_date
+        business_days = 0
+
+        while current_date <= self.end_date:
+            # weekday() returns 0=Monday, 6=Sunday
+            if current_date.weekday() < 5:  # Monday to Friday
+                business_days += 1
+            current_date += timedelta(days=1)
+
+        return business_days
 
     @classmethod
     def from_dict(cls, data):

@@ -39,7 +39,7 @@ PUT    /api/absences/<id>        ✅ Actualizar ausencia
 DELETE /api/absences/<id>        ✅ Eliminar ausencia
 GET    /api/absence-types        ✅ Obtener tipos
 GET    /api/statistics           ✅ Estadísticas
-GET    /health                   ✅ Health check
+GET    /api/health                   ✅ Health check
 ```
 
 #### Validaciones

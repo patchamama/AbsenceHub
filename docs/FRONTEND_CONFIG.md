@@ -31,7 +31,7 @@ The main API URL where the backend is running.
 - Local development: `http://localhost:5000/api`
 - Different host: `http://192.168.1.100:5000/api`
 - Production: `https://api.example.com/api`
-- Custom port: `http://localhost:5001/api`
+- Custom port: `http://localhost:5000/api`
 
 ### VITE_FALLBACK_PORTS
 **Default:** `5000,5001,5002`
@@ -52,7 +52,7 @@ Comma-separated list of ports to try if the main API_URL fails.
    - Frontend automatically tries the first fallback port
 
 3. **Success:** When a working port is found:
-   - Console shows: `✓ Using fallback API URL: http://localhost:5001/api`
+   - Console shows: `✓ Using fallback API URL: http://localhost:5000/api`
    - All subsequent requests use this URL
 
 ## Common Scenarios
@@ -91,7 +91,7 @@ Check the browser console (F12) for messages:
 
 **Success:**
 ```
-✓ Using fallback API URL: http://localhost:5001/api
+✓ Using fallback API URL: http://localhost:5000/api
 ```
 
 **Fallback triggered:**

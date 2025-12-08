@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FormField from '../shared/components/FormField';
 import { validateDateRange } from '../utils/validators';
 import { t } from '../utils/i18n';
 
-export default function AbsenceFilters({ absenceTypes = [], onFilter, onClear }) {
+export default function AbsenceFilters({ absenceTypes = [], currentFilters = {}, onFilter, onClear }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [filterMode, setFilterMode] = useState('range'); // 'range' or 'month'
   const [filterData, setFilterData] = useState({
@@ -16,6 +16,41 @@ export default function AbsenceFilters({ absenceTypes = [], onFilter, onClear })
   });
 
   const [error, setError] = useState(null);
+
+  // Sync internal state with external filters
+  useEffect(() => {
+    if (Object.keys(currentFilters).length > 0) {
+      setFilterData(prev => ({
+        ...prev,
+        service_account: currentFilters.service_account || '',
+        employee_fullname: currentFilters.employee_fullname || '',
+        absence_type: currentFilters.absence_type || '',
+        start_date: currentFilters.start_date || '',
+        end_date: currentFilters.end_date || '',
+        month: currentFilters.month || '',
+      }));
+
+      // Determine filter mode based on currentFilters
+      if (currentFilters.month) {
+        setFilterMode('month');
+      } else if (currentFilters.start_date || currentFilters.end_date) {
+        setFilterMode('range');
+      }
+
+      // Auto-expand if filters are applied
+      setIsExpanded(true);
+    } else {
+      // Clear internal state when filters are cleared externally
+      setFilterData({
+        service_account: '',
+        employee_fullname: '',
+        absence_type: '',
+        start_date: '',
+        end_date: '',
+        month: '',
+      });
+    }
+  }, [currentFilters]);
 
   // Handle field changes
   const handleChange = (e) => {

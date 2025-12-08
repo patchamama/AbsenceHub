@@ -182,7 +182,7 @@ getAbsenceTypes()          // GET /absence-types
 getStatistics()            // GET /statistics
 
 // Health check
-healthCheck()              // GET /health
+healthCheck()              // GET /api/health
 ```
 
 ## Development Workflow

@@ -7,6 +7,7 @@ export default function AbsenceList({
   onDelete,
   onAdd,
   onFilter,
+  onDateClick,
   loading = false,
   error = null,
   lastModifiedId = null,
@@ -142,10 +143,18 @@ export default function AbsenceList({
                 >
                   {absence.absence_type}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+                <td
+                  className="px-6 py-4 text-sm text-gray-600 cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                  onClick={() => onDateClick && onDateClick(absence.start_date, absence.service_account)}
+                  title="Click to view in calendar"
+                >
                   {formatDate(absence.start_date)}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+                <td
+                  className="px-6 py-4 text-sm text-gray-600 cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                  onClick={() => onDateClick && onDateClick(absence.end_date, absence.service_account)}
+                  title="Click to view in calendar"
+                >
                   {formatDate(absence.end_date)}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
