@@ -71,18 +71,45 @@ async function readBackendPort() {
 }
 
 /**
+ * Test if a specific port is responding
+ */
+async function testPort(port) {
+  const parsed = parseUrl(API_BASE_URL);
+  const testUrl = `${parsed.protocol}//${parsed.hostname}:${port}${parsed.pathname}`;
+
+  try {
+    const response = await fetch(`${testUrl}/health`, {
+      method: 'GET',
+      cache: 'no-cache',
+      signal: AbortSignal.timeout(2000)
+    });
+
+    if (response.ok) {
+      console.log(`✓ Backend responding on port ${port}`);
+      return testUrl;
+    }
+  } catch (error) {
+    console.log(`✗ Port ${port} not responding`);
+  }
+
+  return null;
+}
+
+/**
  * Initialize API URL with smart detection
  */
 async function initializeApiUrl() {
-  // Try last working URL first
+  console.log('🔍 Detecting backend API URL...');
+
+  // Step 1: Try last working URL first (fastest path)
   const lastUrl = getLastWorkingUrl();
-  if (lastUrl && lastUrl !== API_BASE_URL) {
+  if (lastUrl) {
     console.log(`Trying last working URL: ${lastUrl}`);
     try {
       const response = await fetch(`${lastUrl}/health`, {
         method: 'GET',
         cache: 'no-cache',
-        timeout: 2000
+        signal: AbortSignal.timeout(2000)
       });
       if (response.ok) {
         API_BASE_URL = lastUrl;
@@ -91,32 +118,41 @@ async function initializeApiUrl() {
         return;
       }
     } catch (error) {
-      console.log('Last working URL no longer responds');
+      console.log('Last working URL no longer responds, trying other ports...');
     }
   }
 
-  // Try to read backend port file
+  // Step 2: Try port from .backend-port file (if exists)
   const backendPort = await readBackendPort();
   if (backendPort) {
-    const parsed = parseUrl(API_BASE_URL);
-    const detectedUrl = `${parsed.protocol}//${parsed.hostname}:${backendPort}${parsed.pathname}`;
-    try {
-      const response = await fetch(`${detectedUrl}/health`, {
-        method: 'GET',
-        cache: 'no-cache',
-        timeout: 2000
-      });
-      if (response.ok) {
-        API_BASE_URL = detectedUrl;
-        api.defaults.baseURL = detectedUrl;
-        saveWorkingUrl(detectedUrl);
-        console.log(`✓ Auto-detected backend at: ${detectedUrl}`);
-        return;
-      }
-    } catch (error) {
-      console.log('Backend port file exists but endpoint not responding');
+    console.log(`Trying port ${backendPort} from .backend-port file...`);
+    const detectedUrl = await testPort(backendPort);
+    if (detectedUrl) {
+      API_BASE_URL = detectedUrl;
+      api.defaults.baseURL = detectedUrl;
+      saveWorkingUrl(detectedUrl);
+      console.log(`✓ Using backend at: ${detectedUrl}`);
+      return;
     }
   }
+
+  // Step 3: Try fallback ports in order (5000, 5001, 5002, ...)
+  console.log('Trying fallback ports in order...');
+  for (const port of FALLBACK_PORTS) {
+    console.log(`Trying port ${port}...`);
+    const workingUrl = await testPort(port);
+    if (workingUrl) {
+      API_BASE_URL = workingUrl;
+      api.defaults.baseURL = workingUrl;
+      saveWorkingUrl(workingUrl);
+      console.log(`✓ Found working backend at: ${workingUrl}`);
+      return;
+    }
+  }
+
+  // Step 4: No backend found
+  console.error('❌ Could not detect any working backend API');
+  console.error(`Tried ports: ${FALLBACK_PORTS.join(', ')}`);
 }
 
 /**
