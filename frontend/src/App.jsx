@@ -446,24 +446,6 @@ function App() {
                   </div>
                 )}
 
-                {/* Absence Form Modal */}
-                {showForm && (
-                  <AbsenceForm
-                    absence={editingAbsence}
-                    absenceTypes={absenceTypes}
-                    onSubmit={handleFormSubmit}
-                    onCancel={handleFormCancel}
-                    loading={formLoading}
-                    overlapError={overlapError}
-                  />
-                )}
-
-                {/* Overlap Error Modal */}
-                <OverlapErrorModal
-                  error={overlapError}
-                  onClose={() => setOverlapError(null)}
-                />
-
                 {/* Filters Section */}
                 <AbsenceFilters
                   absenceTypes={absenceTypes}
@@ -557,6 +539,24 @@ function App() {
             )}
           </>
         )}
+
+        {/* Absence Form Modal - Always available regardless of view */}
+        {showForm && (
+          <AbsenceForm
+            absence={editingAbsence}
+            absenceTypes={absenceTypes}
+            onSubmit={handleFormSubmit}
+            onCancel={handleFormCancel}
+            loading={formLoading}
+            overlapError={overlapError}
+          />
+        )}
+
+        {/* Overlap Error Modal - Always available regardless of view */}
+        <OverlapErrorModal
+          error={overlapError}
+          onClose={() => setOverlapError(null)}
+        />
       </main>
     </div>
   );
