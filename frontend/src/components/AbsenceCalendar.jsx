@@ -200,12 +200,13 @@ export default function AbsenceCalendar({
             const isToday =
               day.date &&
               day.date.toDateString() === new Date().toDateString();
+            const isWeekend = day.date && (day.date.getDay() === 0 || day.date.getDay() === 6);
 
             return (
               <div
                 key={index}
                 className={`min-h-[100px] border-r border-b border-gray-200 p-2 ${
-                  !day.date ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'
+                  !day.date ? 'bg-gray-50' : isWeekend ? 'bg-gray-100' : 'bg-white hover:bg-gray-50'
                 } ${isToday ? 'bg-blue-50' : ''}`}
               >
                 {day.date && (
@@ -232,9 +233,9 @@ export default function AbsenceCalendar({
                       )}
                     </div>
 
-                    {/* Absences for this day */}
+                    {/* Absences for this day - Skip weekends (Saturday=6, Sunday=0) */}
                     <div className="space-y-1">
-                      {day.absences.map((absence) => {
+                      {day.date.getDay() !== 0 && day.date.getDay() !== 6 && day.absences.map((absence) => {
                         const color = getTypeColor(absence.absence_type);
                         const displayName = absence.employee_fullname || absence.service_account;
                         const isHalfDay = absence.is_half_day;
