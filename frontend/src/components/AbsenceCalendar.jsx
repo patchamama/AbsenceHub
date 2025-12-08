@@ -106,15 +106,15 @@ export default function AbsenceCalendar({
 
     // Check if there's a filtered employee
     if (currentFilters.service_account || currentFilters.employee_fullname) {
-      // If service_account is in filters, use it directly
-      if (currentFilters.service_account) {
-        prefilledData.service_account = currentFilters.service_account;
-        prefilledData.employee_fullname = currentFilters.employee_fullname || '';
-      } else if (currentFilters.employee_fullname && absences.length > 0) {
-        // If only employee_fullname is filtered, get service_account from first absence
+      if (absences.length > 0) {
+        // Get data from first absence (all absences are from same employee when filtered)
         const firstAbsence = absences[0];
         prefilledData.service_account = firstAbsence.service_account || '';
-        prefilledData.employee_fullname = currentFilters.employee_fullname;
+        prefilledData.employee_fullname = firstAbsence.employee_fullname || '';
+      } else {
+        // Fallback to filter values if no absences available
+        prefilledData.service_account = currentFilters.service_account || '';
+        prefilledData.employee_fullname = currentFilters.employee_fullname || '';
       }
     }
 
