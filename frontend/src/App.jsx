@@ -550,6 +550,7 @@ function App() {
             absences={absences}
             onSubmit={handleFormSubmit}
             onCancel={handleFormCancel}
+            onDelete={handleDeleteAbsence}
             loading={formLoading}
             overlapError={overlapError}
           />

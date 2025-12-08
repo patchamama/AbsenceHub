@@ -9,6 +9,7 @@ export default function AbsenceForm({
   absences = [],
   onSubmit,
   onCancel,
+  onDelete = null,
   loading = false,
   overlapError = null,
 }) {
@@ -421,28 +422,44 @@ export default function AbsenceForm({
           )}
 
           {/* Form Actions */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClear}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-            >
-              {t('button.clear')}
-            </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-            >
-              {t('button.cancel')}
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? t('status.loading') : t('button.submit')}
-            </button>
+          <div className="flex justify-between pt-4 border-t border-gray-200">
+            {/* Delete button (only in edit mode) */}
+            <div>
+              {isEditMode && onDelete && (
+                <button
+                  type="button"
+                  onClick={() => onDelete(absence.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
+                  {t('button.deleteAbsence')}
+                </button>
+              )}
+            </div>
+
+            {/* Right side buttons */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleClear}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                {t('button.clear')}
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                {t('button.cancel')}
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? t('status.loading') : t('button.submit')}
+              </button>
+            </div>
           </div>
         </form>
       </div>
