@@ -77,6 +77,9 @@ const translations = {
     'button.close': 'Close',
     'button.save': 'Save',
     'button.confirm': 'Confirm',
+    'button.cancel': 'Cancel',
+    'button.deactivate': 'Deactivate',
+    'button.newType': '+ New Type',
 
     // Messages
     'message.createdSuccess': 'Absence created successfully',
@@ -251,6 +254,9 @@ const translations = {
     'button.close': 'Schließen',
     'button.save': 'Speichern',
     'button.confirm': 'Bestätigen',
+    'button.cancel': 'Abbrechen',
+    'button.deactivate': 'Deaktivieren',
+    'button.newType': '+ Neuer Typ',
 
     // Messages
     'message.createdSuccess': 'Abwesenheit erfolgreich erstellt',

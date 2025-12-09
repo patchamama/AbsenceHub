@@ -204,7 +204,7 @@ export default function AbsenceTypeSettings() {
           onClick={handleCreateClick}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
-          + Neuer Typ
+          {t('button.newType')}
         </button>
       </div>
 
@@ -281,7 +281,7 @@ export default function AbsenceTypeSettings() {
                         onClick={() => handleEditClick(type)}
                         className="px-3 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
                       >
-                        Bearbeiten
+                        {t('button.edit')}
                       </button>
                       {type.is_active && (
                         <>
@@ -291,13 +291,13 @@ export default function AbsenceTypeSettings() {
                                 onClick={() => handleConfirmDelete(type.id)}
                                 className="px-2 py-1 text-xs text-white bg-red-600 hover:bg-red-700 rounded"
                               >
-                                Bestätigen
+                                {t('button.confirm')}
                               </button>
                               <button
                                 onClick={handleCancelDelete}
                                 className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
                               >
-                                Abbrechen
+                                {t('button.cancel')}
                               </button>
                             </div>
                           ) : (
@@ -305,7 +305,7 @@ export default function AbsenceTypeSettings() {
                               onClick={() => handleDeleteClick(type)}
                               className="px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
                             >
-                              Deaktivieren
+                              {t('button.deactivate')}
                             </button>
                           )}
                         </>

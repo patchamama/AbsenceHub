@@ -325,7 +325,7 @@ export default function AbsenceCalendar({
               style={{ backgroundColor: type.color || '#3B82F6' }}
             />
             <span className="text-sm text-gray-600">
-              {type.label || type.name_de || type.name}
+              {t(`absence.${type.name || type.value}`)}
             </span>
           </div>
         ))}
