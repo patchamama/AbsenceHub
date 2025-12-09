@@ -287,7 +287,7 @@ function App() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              📋 Liste
+              📋 {t('nav.list')}
             </button>
             <button
               onClick={() => setCurrentView('calendar')}
@@ -297,7 +297,7 @@ function App() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              📅 Kalender
+              📅 {t('nav.calendar')}
             </button>
             <button
               onClick={() => setCurrentView('settings')}
@@ -307,7 +307,7 @@ function App() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ⚙️ Einstellungen
+              ⚙️ {t('nav.settings')}
             </button>
             <button
               onClick={() => setCurrentView('audit')}
@@ -317,7 +317,7 @@ function App() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              📋 Audit Logs
+              📋 {t('nav.auditLogs')}
             </button>
           </nav>
         </div>
@@ -410,7 +410,7 @@ function App() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white rounded-lg shadow p-6">
                       <h3 className="text-sm font-medium text-gray-500 uppercase">
-                        Total Days
+                        {t('stats.totalDays')}
                       </h3>
                       <p className="mt-2 text-3xl font-bold text-gray-900">
                         {statistics.total_days || 0}
@@ -429,7 +429,7 @@ function App() {
                     </div>
                     <div className="bg-white rounded-lg shadow p-6">
                       <h3 className="text-sm font-medium text-gray-500 uppercase">
-                        Days by Type
+                        {t('stats.daysByType')}
                       </h3>
                       <ul className="mt-2 space-y-1">
                         {Object.entries(statistics.by_type || {}).map(([type, days]) => (

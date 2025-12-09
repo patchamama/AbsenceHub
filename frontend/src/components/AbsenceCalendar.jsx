@@ -167,28 +167,37 @@ export default function AbsenceCalendar({
 
   // Month/Year display
   const monthNames = [
-    'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+    t('calendar.months.january'), t('calendar.months.february'), t('calendar.months.march'),
+    t('calendar.months.april'), t('calendar.months.may'), t('calendar.months.june'),
+    t('calendar.months.july'), t('calendar.months.august'), t('calendar.months.september'),
+    t('calendar.months.october'), t('calendar.months.november'), t('calendar.months.december')
   ];
   const monthYearDisplay = `${monthNames[month]} ${year}`;
 
   // Day names - Dynamic based on week start preference
   const weekStartsOn = getWeekStartsOn();
-  const allDayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
   const dayNames = weekStartsOn === 1
-    ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']  // Start with Monday
-    : ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']; // Start with Sunday
+    ? [
+        t('calendar.days.monday'), t('calendar.days.tuesday'), t('calendar.days.wednesday'),
+        t('calendar.days.thursday'), t('calendar.days.friday'), t('calendar.days.saturday'),
+        t('calendar.days.sunday')
+      ]  // Start with Monday
+    : [
+        t('calendar.days.sunday'), t('calendar.days.monday'), t('calendar.days.tuesday'),
+        t('calendar.days.wednesday'), t('calendar.days.thursday'), t('calendar.days.friday'),
+        t('calendar.days.saturday')
+      ]; // Start with Sunday
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
       {/* Calendar Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Kalenderansicht</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('calendar.title')}</h2>
         <div className="flex items-center gap-4">
           <button
             onClick={goToPreviousMonth}
             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-            aria-label="Vorheriger Monat"
+            aria-label={t('calendar.previousMonth')}
           >
             ◀
           </button>
@@ -198,7 +207,7 @@ export default function AbsenceCalendar({
           <button
             onClick={goToNextMonth}
             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-            aria-label="Nächster Monat"
+            aria-label={t('calendar.nextMonth')}
           >
             ▶
           </button>
@@ -206,7 +215,7 @@ export default function AbsenceCalendar({
             onClick={goToToday}
             className="px-3 py-1 bg-blue-600 text-white hover:bg-blue-700 rounded transition-colors"
           >
-            Heute
+            {t('calendar.today')}
           </button>
         </div>
       </div>
@@ -256,8 +265,8 @@ export default function AbsenceCalendar({
                         <button
                           onClick={() => handleAddAbsence(day.date)}
                           className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full w-5 h-5 flex items-center justify-center transition-colors text-lg font-bold leading-none"
-                          title="Add absence"
-                          aria-label="Add absence for this day"
+                          title={t('calendar.addAbsence')}
+                          aria-label={t('calendar.addAbsence')}
                         >
                           +
                         </button>
@@ -308,7 +317,7 @@ export default function AbsenceCalendar({
 
       {/* Legend */}
       <div className="mt-6 flex flex-wrap gap-4">
-        <div className="text-sm font-medium text-gray-700">Legende:</div>
+        <div className="text-sm font-medium text-gray-700">{t('calendar.legend')}:</div>
         {absenceTypes.map((type) => (
           <div key={type.value || type.name} className="flex items-center gap-2">
             <div

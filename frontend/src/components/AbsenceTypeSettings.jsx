@@ -10,6 +10,7 @@ import {
   deleteAbsenceType,
 } from '../services/absenceTypeApi';
 import AbsenceTypeForm from './AbsenceTypeForm';
+import { t } from '../utils/i18n';
 
 export default function AbsenceTypeSettings() {
   const [absenceTypes, setAbsenceTypes] = useState([]);
@@ -130,9 +131,9 @@ export default function AbsenceTypeSettings() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Abwesenheitstypen verwalten</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('settings.title')}</h1>
         <p className="text-gray-600 mt-2">
-          Hier können Sie Abwesenheitstypen erstellen, bearbeiten und verwalten.
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -152,10 +153,10 @@ export default function AbsenceTypeSettings() {
 
       {/* Calendar Week Start Setting */}
       <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">Kalendereinstellungen</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('settings.calendar')}</h3>
         <div className="flex items-center gap-4">
           <label className="text-sm text-gray-700 font-medium">
-            Woche beginnt am:
+            {t('settings.weekStartsOn')}
           </label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -167,7 +168,7 @@ export default function AbsenceTypeSettings() {
                 onChange={(e) => handleWeekStartChange(e.target.value)}
                 className="w-4 h-4 text-blue-600 border-gray-300"
               />
-              <span className="text-sm text-gray-700">Montag</span>
+              <span className="text-sm text-gray-700">{t('settings.monday')}</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -178,7 +179,7 @@ export default function AbsenceTypeSettings() {
                 onChange={(e) => handleWeekStartChange(e.target.value)}
                 className="w-4 h-4 text-blue-600 border-gray-300"
               />
-              <span className="text-sm text-gray-700">Sonntag</span>
+              <span className="text-sm text-gray-700">{t('settings.sunday')}</span>
             </label>
           </div>
         </div>
@@ -195,7 +196,7 @@ export default function AbsenceTypeSettings() {
             className="w-4 h-4 text-blue-600 border-gray-300 rounded"
           />
           <label htmlFor="showInactive" className="text-sm text-gray-700">
-            Inaktive Typen anzeigen
+            {t('settings.showInactive')}
           </label>
         </div>
 
