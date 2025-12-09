@@ -49,7 +49,7 @@ htmlcov/
 *~
 
 # Frontend build (generated during deployment)
-static/
+# static/
 
 # Logs
 *.log
