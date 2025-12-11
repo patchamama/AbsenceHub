@@ -13,8 +13,14 @@ export default function AbsenceCalendar({
   onEditClick = null,
   currentFilters = {},
 }) {
-  // Maintain the current displayed month independently
+  // Maintain the current displayed month independently using localStorage for persistence
   const [currentDate, setCurrentDate] = useState(() => {
+    // Try to get saved month from localStorage first
+    const savedMonth = localStorage.getItem('calendarCurrentMonth');
+    if (savedMonth) {
+      const [year, month] = savedMonth.split('-').map(Number);
+      return new Date(year, month - 1, 1);
+    }
     // If initialMonth is provided (format: YYYY-MM), use it
     if (initialMonth) {
       const [year, month] = initialMonth.split('-').map(Number);
@@ -25,19 +31,13 @@ export default function AbsenceCalendar({
   const [hoveredAbsence, setHoveredAbsence] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [weekStartKey, setWeekStartKey] = useState(0); // Force re-render on week start change
-  const [initialMonthSet, setInitialMonthSet] = useState(!!initialMonth);
 
-  // Update currentDate when initialMonth changes (only if explicitly provided)
+  // Save current month to localStorage whenever it changes
   useEffect(() => {
-    // Only respond to initialMonth if it's explicitly set (not null/undefined)
-    // and we haven't already initialized from it
-    if (initialMonth && !initialMonthSet) {
-      const [year, month] = initialMonth.split('-').map(Number);
-      const newDate = new Date(year, month - 1, 1);
-      setCurrentDate(newDate);
-      setInitialMonthSet(true);
-    }
-  }, [initialMonth, initialMonthSet]);
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    localStorage.setItem('calendarCurrentMonth', `${year}-${month}`);
+  }, [currentDate]);
 
   // Listen for calendar week start changes
   useEffect(() => {
