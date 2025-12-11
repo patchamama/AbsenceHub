@@ -25,13 +25,21 @@ export default function AbsenceCalendar({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [weekStartKey, setWeekStartKey] = useState(0); // Force re-render on week start change
 
-  // Update currentDate when initialMonth changes
+  // Update currentDate when initialMonth changes (but not on every render)
   useEffect(() => {
     if (initialMonth) {
       const [year, month] = initialMonth.split('-').map(Number);
-      setCurrentDate(new Date(year, month - 1, 1));
+      const newDate = new Date(year, month - 1, 1);
+
+      // Only update if the month/year is actually different
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth();
+
+      if (year !== currentYear || (month - 1) !== currentMonth) {
+        setCurrentDate(newDate);
+      }
     }
-  }, [initialMonth]);
+  }, [initialMonth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for calendar week start changes
   useEffect(() => {
