@@ -13,6 +13,7 @@ export default function AbsenceCalendar({
   onEditClick = null,
   currentFilters = {},
 }) {
+  // Maintain the current displayed month independently
   const [currentDate, setCurrentDate] = useState(() => {
     // If initialMonth is provided (format: YYYY-MM), use it
     if (initialMonth) {
@@ -24,22 +25,19 @@ export default function AbsenceCalendar({
   const [hoveredAbsence, setHoveredAbsence] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [weekStartKey, setWeekStartKey] = useState(0); // Force re-render on week start change
+  const [initialMonthSet, setInitialMonthSet] = useState(!!initialMonth);
 
-  // Update currentDate when initialMonth changes (but not on every render)
+  // Update currentDate when initialMonth changes (only if explicitly provided)
   useEffect(() => {
-    if (initialMonth) {
+    // Only respond to initialMonth if it's explicitly set (not null/undefined)
+    // and we haven't already initialized from it
+    if (initialMonth && !initialMonthSet) {
       const [year, month] = initialMonth.split('-').map(Number);
       const newDate = new Date(year, month - 1, 1);
-
-      // Only update if the month/year is actually different
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth();
-
-      if (year !== currentYear || (month - 1) !== currentMonth) {
-        setCurrentDate(newDate);
-      }
+      setCurrentDate(newDate);
+      setInitialMonthSet(true);
     }
-  }, [initialMonth]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialMonth, initialMonthSet]);
 
   // Listen for calendar week start changes
   useEffect(() => {
